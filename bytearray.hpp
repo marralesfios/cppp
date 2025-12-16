@@ -40,6 +40,9 @@ namespace cppp{
             bytes(std::initializer_list<std::byte> b){
                 append(b);
             }
+            bool empty() const{
+                return *_l == 0uz;
+            }
             template<typename I> requires(std::is_same_v<I,std::byte> || (std::is_integral_v<I> && std::is_unsigned_v<I>))
             void writel(std::size_t at,I num){
                 _expandbytes<std::make_index_sequence<sizeof(I)>>::write(*_m+at,num);
