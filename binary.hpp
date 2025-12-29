@@ -49,10 +49,10 @@ namespace cppp{
     }
     template<is_uint I>
     void write(std::byte* memory,I number){
-        detail::_expandbytes<std::make_integer_sequence<sizeof(I)>>::write<I>(memory,number);
+        detail::_expandbytes<std::make_index_sequence<sizeof(I)>>::template write<I>(memory,number);
     }
     template<is_uint I>
     I read(const std::byte* memory){
-        return detail::_expandbytes<std::make_integer_sequence<sizeof(I)>>::read<I>(memory);
+        return detail::_expandbytes<std::make_index_sequence<sizeof(I)>>::template read<I>(memory);
     }
 }
