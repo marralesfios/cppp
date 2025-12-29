@@ -44,6 +44,9 @@ namespace cppp{
             std::span<std::byte,n> append(){
                 return std::span<std::byte,n>(append(n),n);
             }
+            void append(std::byte v){
+                *append(1uz) = v;
+            }
             template<typename I>
             void appendl(I v){
                 write<I>(append(sizeof(I)),v);
