@@ -3,6 +3,7 @@
 #include<utility>
 #include<cstdint>
 #include<cmath>
+#include<ranges>
 #include"type_traits/copy-const.hpp"
 namespace cppp{
     template<typename T>
@@ -12,6 +13,11 @@ namespace cppp{
         public:
             view(T* m,T* e) : m(m), e(e){}
             view(T* m,std::size_t s) : m(m), e(m+s){}
+            operator view<const T>() const{
+                return {m,e};
+            }
+            template<typename R> requires(std::ranges::contiguous_range<R>&&std::ranges::sized_range<R>)
+            view(R&& r) : m(std::ranges::data(r)), e(m+std::ranges::size(r)){}
             view<copy_const_t<T,std::byte>> to_bytes() const{
                 using M = copy_const_t<T,std::byte>*;
                 return {reinterpret_cast<M>(m),reinterpret_cast<M>(e)};
@@ -38,6 +44,8 @@ namespace cppp{
                 return e-m;
             }
     };
+    template<typename R> requires(std::ranges::contiguous_range<R>&&std::ranges::sized_range<R>)
+    view(const R& r) -> view<std::ranges::range_value_t<R>>;
     using byte_view = view<std::byte>;
     using frozen_byte_view = view<const std::byte>;
 }
