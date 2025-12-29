@@ -40,7 +40,7 @@ namespace cppp{
                 ));
             }
             template<typename I>
-            static I read(std::byte* memory){
+            static I read(const std::byte* memory){
                 return (... | (
                     static_cast<I>(memory[index]) << (index*CHAR_BIT)
                 ));
@@ -52,7 +52,7 @@ namespace cppp{
         detail::_expandbytes<std::make_integer_sequence<sizeof(I)>>::write<I>(memory,number);
     }
     template<is_uint I>
-    I read(std::byte* memory){
+    I read(const std::byte* memory){
         return detail::_expandbytes<std::make_integer_sequence<sizeof(I)>>::read<I>(memory);
     }
 }
