@@ -1,10 +1,7 @@
 #pragma once
 #include<initializer_list>
-#include<type_traits>
 #include<algorithm>
 #include<cstdint>
-#include<utility>
-#include<climits>
 #include<cmath>
 #include<span>
 #include<cppp/zeroing-field.hpp>
@@ -22,68 +19,26 @@ namespace cppp{
                 delete[] std::exchange(*_m,nullptr);
             }
         }
-        template<typename T>
-        struct _expandbytes{};
-        template<std::size_t... index>
-        struct _expandbytes<std::integer_sequence<std::size_t,index...>>{
-            template<typename I>
-            static void write(std::byte* memory,I number){
-                (..., (
-                    *(memory+index) = static_cast<std::byte>(number >> (index*CHAR_BIT))
-                ));
-            }
-        };
         public:
             bytes() = default;
             bytes(bytes&&) = default;
             bytes& operator=(bytes&&) = default;
             bytes(std::initializer_list<std::byte> b){
-                append(b);
+                std::copy_n(b.begin(),b.size(),append(b.size()));
             }
             bool empty() const{
                 return *_l == 0uz;
             }
-            template<typename I> requires(std::is_same_v<I,std::byte> || (std::is_integral_v<I> && std::is_unsigned_v<I>))
-            void writel(std::size_t at,I num){
-                _expandbytes<std::make_index_sequence<sizeof(I)>>::write(*_m+at,num);
-            }
-            void write(std::size_t at,std::span<const std::byte> m){
-                std::ranges::copy(m,*_m+at);
-            }
-            void write(std::size_t at,std::byte b){
-                (*_m)[at] = b;
-            }
-            template<typename I>
-            void writel_and_move(std::size_t& at,I num){
-                writel<I>(at,num);
-                at += sizeof(I);
-            }
-            void write_and_move(std::size_t& at,std::span<const std::byte> m){
-                write(at,m);
-                at += m.size();
-            }
-            void write_and_move(std::size_t& at,std::byte b){
-                write(at,b);
-                ++at;
-            }
-            template<typename I>
-            void appendl(I num){
-                std::size_t _ll = *_l+sizeof(I);
-                reserve(_ll);
-                writel<I>(*_l,num);
+            std::byte* append(std::size_t n){
+                std::byte* p = end();
+                std::size_t _ll = *_l+n;
+                resize(_ll);
                 _l = _ll;
+                return p;
             }
-            void append(std::span<const std::byte> b){
-                std::size_t _ll = *_l+b.size();
-                reserve(_ll);
-                write(*_l,b);
-                _l = _ll;
-            }
-            void append(std::byte b){
-                appendl<std::byte>(b);
-            }
-            void append(std::uint8_t b){
-                append(std::byte{b});
+            template<std::size_t n>
+            std::span<std::byte,n> append(){
+                return std::span<std::byte,n>(append(n),n);
             }
             void reserve(std::size_t ns){
                 while(ns>*_c){

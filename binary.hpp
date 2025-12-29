@@ -1,8 +1,11 @@
 #pragma once
 #include"template-string.hpp"
 #include<type_traits>
+#include<concepts>
 #include<cstddef>
+#include<utility>
 #include<cstdint>
+#include<climits>
 #include<span>
 namespace cppp{
     using buffer = std::span<std::byte>;
@@ -22,5 +25,34 @@ namespace cppp{
     template<template_string ts>
     frozenstaticbuffer<ts.size()> operator ""_bbuf(){
         return std::as_bytes(std::span<const char,ts.size()>(ts));
+    }
+    template<typename T>
+    concept is_uint = std::same_as<T,std::byte> || (std::is_integral_v<T> && std::is_unsigned_v<T>);
+    namespace detail{
+        template<typename T>
+        struct _expandbytes{};
+        template<std::size_t... index>
+        struct _expandbytes<std::integer_sequence<std::size_t,index...>>{
+            template<typename I>
+            static void write(std::byte* memory,I number){
+                (..., (
+                    memory[index] = static_cast<std::byte>(number >> (index*CHAR_BIT))
+                ));
+            }
+            template<typename I>
+            static I read(std::byte* memory){
+                return (... | (
+                    static_cast<I>(memory[index]) << (index*CHAR_BIT)
+                ));
+            }
+        };
+    }
+    template<is_uint I>
+    void write(std::byte* memory,I number){
+        detail::_expandbytes<std::make_integer_sequence<sizeof(I)>>::write<I>(memory,number);
+    }
+    template<is_uint I>
+    I read(std::byte* memory){
+        return detail::_expandbytes<std::make_integer_sequence<sizeof(I)>>::read<I>(memory);
     }
 }

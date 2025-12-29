@@ -12,7 +12,8 @@ namespace cppp{
         std::size_t bufp = 0uz;
         void popbuff(){
             if(bufp == bufn){
-                bufn = bf.read(pbuf);
+                bufp = 0uz;
+                bufn = bf.read(std::as_writable_bytes(std::span(pbuf)));
                 if(!bufn) throw std::logic_error("Scanner::next(): no more data");
             }
         }
@@ -22,6 +23,9 @@ namespace cppp{
                 popbuff();
                 return pbuf[bufp++];
             }
+            void unchecked_next(){
+                ++bufp;
+            }
             char8_t peek(){
                 popbuff();
                 return pbuf[bufp];
@@ -29,20 +33,19 @@ namespace cppp{
             bool expect(char8_t c){
                 bool expected = (peek() == c);
                 if(expected){
-                    ++bufp;
+                    unchecked_next();
                 }
                 return expected;
             }
             bool expect(const ascii_mask& mask){
-                bool expected = mask[c];
+                bool expected = mask[peek()];
                 if(expected){
-                    ++bufp;
+                    unchecked_next();
                 }
                 return expected;
             }
             void skip(const ascii_mask& mask){
                 while(expect(mask));
             }
-            
     };
 }

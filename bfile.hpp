@@ -61,7 +61,7 @@ namespace cppp{
             bool fread(buffer buf){
                 return read(buf)==buf.size();
             }
-            bool mread(buffer buf){
+            bool safe_read(buffer buf){
                 std::unique_ptr<std::byte[]> dup{new std::byte[buf.size()]};
                 bool state;
                 if((state=fread({dup.get(),buf.size()}))){
@@ -70,7 +70,7 @@ namespace cppp{
                 return state;
             }
             template<std::size_t l>
-            bool mread(staticbuffer<l> buf){
+            bool safe_read(staticbuffer<l> buf){
                 std::array<std::byte,l> dup;
                 bool state;
                 if((state=fread(dup))){
@@ -87,38 +87,19 @@ namespace cppp{
             std::uint8_t readb(){
                 return std::bit_cast<std::uint8_t>(traits::to_char_type(fs.get()));
             }
-            std::uint16_t readwle(){
-                std::uint16_t b0 = static_cast<std::uint16_t>(readb());
-                std::uint16_t b1 = static_cast<std::uint16_t>(readb());
-                return b0|(b1<<8);
+            template<typename I>
+            I readl(){
+                std::array<std::byte,sizeof(I)> buf;
+                if(!fread(buf)){
+                    throw std::runtime_error("BinaryFile::readl(): not enough data");
+                }
+                return read<I>(buf.data());
             }
-            std::uint32_t readdle(){
-                std::uint32_t b0 = static_cast<std::uint32_t>(readb());
-                std::uint32_t b1 = static_cast<std::uint32_t>(readb());
-                std::uint32_t b2 = static_cast<std::uint32_t>(readb());
-                std::uint32_t b3 = static_cast<std::uint32_t>(readb());
-                return b0
-                     |(b1<<8)
-                     |(b2<<16)
-                     |(b3<<24);
+            void write(std::string_view s){
+                fs.write(s.data(),s.size());
             }
-            std::uint64_t readqle(){
-                std::uint64_t b0 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b1 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b2 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b3 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b4 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b5 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b6 = static_cast<std::uint64_t>(readb());
-                std::uint64_t b7 = static_cast<std::uint64_t>(readb());
-                return b0
-                     |(b1<<8)
-                     |(b2<<16)
-                     |(b3<<24)
-                     |(b4<<32)
-                     |(b5<<40)
-                     |(b6<<48)
-                     |(b7<<56);
+            void write(std::u8string_view s){
+                fs.write(reinterpret_cast<const char*>(s.data()),s.size());
             }
             void write(frozenbuffer buf){
                 fs.write(reinterpret_cast<const char*>(buf.data()),buf.size());
@@ -129,25 +110,11 @@ namespace cppp{
             void writeb(std::uint8_t v){
                 fs.put(std::bit_cast<char>(v));
             }
-            void writewle(std::uint16_t v){
-                writeb(static_cast<std::uint8_t>(v));
-                writeb(static_cast<std::uint8_t>(v>>8));
-            }
-            void writedle(std::uint32_t v){
-                writeb(static_cast<std::uint8_t>(v));
-                writeb(static_cast<std::uint8_t>(v>>8));
-                writeb(static_cast<std::uint8_t>(v>>16));
-                writeb(static_cast<std::uint8_t>(v>>24));
-            }
-            void writeqle(std::uint64_t v){
-                writeb(static_cast<std::uint8_t>(v));
-                writeb(static_cast<std::uint8_t>(v>>8));
-                writeb(static_cast<std::uint8_t>(v>>16));
-                writeb(static_cast<std::uint8_t>(v>>24));
-                writeb(static_cast<std::uint8_t>(v>>32));
-                writeb(static_cast<std::uint8_t>(v>>40));
-                writeb(static_cast<std::uint8_t>(v>>48));
-                writeb(static_cast<std::uint8_t>(v>>56));
+            template<typename I>
+            void writel(I v){
+                std::array<std::byte,sizeof(I)> buf;
+                write<I>(buf.data(),v);
+                write(buf);
             }
             void flush(){
                 fs.flush();
