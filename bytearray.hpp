@@ -5,6 +5,7 @@
 #include<cmath>
 #include<span>
 #include<cppp/zeroing-field.hpp>
+#include"binary.hpp"
 namespace cppp{
     class bytes{
         zeroing_field<std::byte*> _m;
@@ -29,6 +30,9 @@ namespace cppp{
             bool empty() const{
                 return *_l == 0uz;
             }
+            void append(frozenbuffer b){
+                std::copy_n(b.data(),b.size(),append(b.size()));
+            }
             std::byte* append(std::size_t n){
                 std::byte* p = end();
                 std::size_t _ll = *_l+n;
@@ -39,6 +43,10 @@ namespace cppp{
             template<std::size_t n>
             std::span<std::byte,n> append(){
                 return std::span<std::byte,n>(append(n),n);
+            }
+            template<typename I>
+            void appendl(I v){
+                write<I>(append(sizeof(I)),v);
             }
             void reserve(std::size_t ns){
                 while(ns>*_c){
