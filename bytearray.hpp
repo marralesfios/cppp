@@ -34,11 +34,9 @@ namespace cppp{
                 std::copy_n(b.data(),b.size(),append(b.size()));
             }
             std::byte* append(std::size_t n){
-                std::byte* p = end();
-                std::size_t _ll = *_l+n;
-                resize(_ll);
-                _l = _ll;
-                return p;
+                std::size_t old_size = *_l;
+                resize(*_l+n);
+                return *_m+old_size;
             }
             template<std::size_t n>
             std::span<std::byte,n> append(){
@@ -56,6 +54,11 @@ namespace cppp{
                     *_c += std::max(*_c,1uz);
                 }
                 _reallocate();
+            }
+            void uninitialized_resize(std::size_t ns){
+                _c = ns;
+                _reallocate();
+                _l = ns;
             }
             void resize(std::size_t ns,std::byte b=std::byte{0}){
                 _c = ns;
