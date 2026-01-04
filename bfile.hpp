@@ -93,7 +93,7 @@ namespace cppp{
                 if(!fread(buf)){
                     throw std::runtime_error("BinaryFile::readl(): not enough data");
                 }
-                return read<I>(buf.data());
+                return cppp::read<I>(buf.data());
             }
             void write(std::string_view s){
                 fs.write(s.data(),s.size());
@@ -113,7 +113,7 @@ namespace cppp{
             template<typename I>
             void writel(I v){
                 std::array<std::byte,sizeof(I)> buf;
-                write<I>(buf.data(),v);
+                cppp::write<I>(buf.data(),v);
                 write(buf);
             }
             void flush(){
