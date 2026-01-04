@@ -2,7 +2,7 @@
 #include<iterator>
 namespace cppp{
     template<typename T>
-    [[deprecated("These don't need to be member functions")]] class const_iterable : public T{
+    class [[deprecated("These don't need to be member functions")]] const_iterable : public T{
         public:
             using T::T;
             constexpr T::const_iterator cbegin() const noexcept(noexcept(std::declval<const T&>().begin())){
@@ -13,7 +13,7 @@ namespace cppp{
             }
     };
     template<typename T>
-    [[deprecated("These don't need to be member functions")]] class reverse_iterable : public T{
+    class [[deprecated("These don't need to be member functions")]] reverse_iterable : public T{
         public:
             using T::T;
             using reverse_iterator = std::reverse_iterator<typename T::iterator>;
