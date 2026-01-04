@@ -43,6 +43,9 @@ namespace cppp{
             std::size_t size() const{
                 return e-m;
             }
+            bool empty() const{
+                return m == e;
+            }
     };
     template<typename R> requires(std::ranges::contiguous_range<R>&&std::ranges::sized_range<R>)
     view(const R& r) -> view<std::ranges::range_value_t<R>>;
