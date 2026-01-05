@@ -45,10 +45,10 @@ namespace cppp{
             view<T> slice(std::size_t start,std::size_t stop=-1uz) const{
                 return view<T>(m+start,m+std::min(stop,size()));
             }
-            T* begin(){
+            T* begin() const{
                 return m;
             }
-            T* end(){
+            T* end() const{
                 return e;
             }
             std::size_t size() const{
