@@ -25,14 +25,25 @@ namespace cppp{
             T& operator[](std::size_t i) const{
                 return m[i];
             }
+            view<T> partition(std::size_t n){
+                view<T> cutout{m,m+n};
+                m += n;
+                return cutout;
+            }
+            T& pop_front(){
+                return *m++;
+            }
+            T& pop_back(){
+                return *--e;
+            }
             T* read(std::size_t n=1uz){
                 return std::exchange(m,m+n);
             }
             view<T> subview(std::size_t start,std::size_t len=-1uz) const{
-                return view(m+start,std::min(len,size()));
+                return view<T>(m+start,std::min(len,size()));
             }
             view<T> slice(std::size_t start,std::size_t stop=-1uz) const{
-                return view(m+start,m+std::min(stop,size()));
+                return view<T>(m+start,m+std::min(stop,size()));
             }
             T* begin(){
                 return m;
