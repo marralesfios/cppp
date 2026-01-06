@@ -34,8 +34,10 @@ namespace cppp{
             return arr+size();
         }
     };
-    template<template_string s>
-    consteval decltype(s) operator ""_ts(){
-        return s;
+    inline namespace literals{
+        template<template_string s>
+        consteval decltype(s) operator ""_ts(){
+            return s;
+        }
     }
 }
