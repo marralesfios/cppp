@@ -14,6 +14,8 @@ namespace cppp{
             fixed_array(R&& ran) : fixed_array(std::ranges::size(ran)){
                 std::ranges::copy(ran,begin());
             }
+            // don't take a std::span or we may conflict with the above
+            fixed_array(T* m,std::size_t n) : buf(m,n){}
             fixed_array(std::size_t sz) : buf(new T[sz],sz){}
             fixed_array(std::size_t sz,value_init_tag_t) : buf(new T[sz](),sz){}
             fixed_array(const fixed_array&) = delete;
@@ -37,6 +39,11 @@ namespace cppp{
             }
             std::size_t size() const noexcept{
                 return buf.size();
+            }
+            T* release() noexcept{
+                T* m = data();
+                buf = {};
+                return m;
             }
             using iterator = T*;
             using const_iterator = const T*;
