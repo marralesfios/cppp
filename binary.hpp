@@ -35,7 +35,7 @@ namespace cppp{
         return std::as_bytes(std::span<const char,ts.size()>(ts));
     }
     template<typename T>
-    concept is_int = std::same_as<T,std::byte> || std::is_integral_v<T>;
+    concept is_int = std::same_as<T,std::byte> || std::integral<T>;
     namespace detail{
         template<typename T,std::size_t last>
         struct _expandbytes{};
@@ -43,16 +43,25 @@ namespace cppp{
         struct _expandbytes<std::integer_sequence<std::size_t,index...>,last>{
             template<typename I>
             static void write(std::byte* memory,I number){
-                (..., (
-                    memory[index] = static_cast<std::byte>(number >> (index*CHAR_BIT))
-                ));
-                memory[last] = static_cast<std::byte>(number >> (last*CHAR_BIT));
+                if constexpr(!sizeof...(index)){
+                    *memory = static_cast<std::byte>(number);
+                }else{
+                    (..., (
+                        memory[index] = static_cast<std::byte>(number >> (index*CHAR_BIT))
+                    ));
+                    memory[last] = static_cast<std::byte>(number >> (last*CHAR_BIT));
+                }
             }
             template<typename I>
             static I read(const std::byte* memory){
-                I low = (... | (
-                    static_cast<I>(memory[index]) << (index*CHAR_BIT)
-                ));
+                I low;
+                if constexpr(sizeof...(index)){
+                    low = (... | (
+                        static_cast<I>(memory[index]) << (index*CHAR_BIT)
+                    ));
+                }else{
+                    low = static_cast<I>(0);
+                }
                 if constexpr(std::is_signed_v<I>){
                     return low | static_cast<I>((static_cast<I>(memory[last]&0b0111'1111_b)-static_cast<I>(memory[last]&0b1000'0000_b)) << (last*CHAR_BIT));
                 }else{
