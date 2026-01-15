@@ -25,6 +25,12 @@ namespace cppp{
             T& operator[](std::size_t i) const{
                 return m[i];
             }
+            T& front() const{
+                return *m;
+            }
+            T& back() const{
+                return *(e-1);
+            }
             view<T> partition(std::size_t n){
                 view<T> cutout{m,m+n};
                 m += n;
