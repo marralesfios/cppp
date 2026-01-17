@@ -6,6 +6,10 @@ namespace cppp{
     namespace detail{
         template<typename T,std::size_t>
         using _repeat_for_pack_t = T;
+        template<typename T,std::size_t>
+        T _repeat_for_pack_v(T v){
+            return v;
+        }
         template<typename T,std::size_t ...indices>
         class vec{
             public:
@@ -16,6 +20,7 @@ namespace cppp{
                 std::array<T,size()> m;
             public:
                 vec() = default;
+                vec(T v) noexcept: m{_repeat_for_pack_v<T,indices>(v)...}{}
                 vec(_repeat_for_pack_t<T,indices>... v) noexcept : m{v...}{}
                 template<typename U> requires(std::constructible_from<T,U>)
                 explicit(!std::convertible_to<U,T>) vec(vec<U,indices...> conv) : vec(static_cast<T>(conv[indices])...){}
