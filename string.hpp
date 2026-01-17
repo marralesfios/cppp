@@ -4,7 +4,7 @@
 namespace cppp{
     using str = std::u8string;
     using sv = std::u8string_view;
-    inline std::string_view cview(sv s){
+    constexpr inline std::string_view cview(sv s){
         return {reinterpret_cast<const char*>(s.data()),s.size()};
     }
     inline std::string tocs(str&& s){

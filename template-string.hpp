@@ -1,5 +1,6 @@
 #pragma once
 #include<cstdint>
+#include<string>
 namespace cppp{
     template<std::size_t l>
     struct template_string{
@@ -14,6 +15,9 @@ namespace cppp{
         }
         consteval std::size_t size() const{
             return l-1uz;
+        }
+        constexpr std::string_view sv() const{
+            return {arr,size()};
         }
         constexpr const char& operator[](std::size_t idx) const{
             return arr[idx];
