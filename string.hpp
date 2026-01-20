@@ -17,4 +17,7 @@ namespace cppp{
     inline str tou8(const std::string& s){
         return {s.begin(),s.end()};
     }
+    inline str tou8(const std::string_view& s){
+        return {s.begin(),s.end()};
+    }
 }
