@@ -79,34 +79,6 @@ namespace cppp{
                 constexpr vec operator/(this vec lhs,vec rhs){
                     return lhs /= rhs;
                 }
-                constexpr vec& operator+=(T scalar){
-                    (..., (m[indices] += scalar));
-                    return *this;
-                }
-                constexpr vec operator+(this vec lhs,T scalar){
-                    return lhs += scalar;
-                }
-                constexpr vec& operator-=(T scalar){
-                    (..., (m[indices] -= scalar));
-                    return *this;
-                }
-                constexpr vec operator-(this vec lhs,T scalar){
-                    return lhs -= scalar;
-                }
-                constexpr vec& operator*=(T scalar){
-                    (..., (m[indices] *= scalar));
-                    return *this;
-                }
-                constexpr vec operator*(this vec lhs,T scalar){
-                    return lhs *= scalar;
-                }
-                constexpr vec& operator/=(T scalar){
-                    (..., (m[indices] /= scalar));
-                    return *this;
-                }
-                constexpr vec operator/(this vec lhs,T scalar){
-                    return lhs /= scalar;
-                }
                 constexpr bool operator==(vec other) const{
                     return (...&&(m[indices] == other[indices]));
                 }
