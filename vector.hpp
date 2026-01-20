@@ -19,89 +19,95 @@ namespace cppp{
             private:
                 std::array<T,size()> m;
             public:
-                vec() = default;
-                vec(T v) noexcept: m{_repeat_for_pack_v<T,indices>(v)...}{}
-                vec(_repeat_for_pack_t<T,indices>... v) noexcept : m{v...}{}
+                constexpr vec() = default;
+                constexpr vec(T v) noexcept: m{_repeat_for_pack_v<T,indices>(v)...}{}
+                constexpr vec(_repeat_for_pack_t<T,indices>... v) noexcept : m{v...}{}
                 template<typename U> requires(std::constructible_from<T,U>)
-                explicit(!std::convertible_to<U,T>) vec(vec<U,indices...> conv) : vec(static_cast<T>(conv[indices])...){}
-                T& operator[](std::size_t ind) noexcept{
+                constexpr explicit(!std::convertible_to<U,T>) vec(vec<U,indices...> conv) : vec(static_cast<T>(conv[indices])...){}
+                constexpr T& operator[](std::size_t ind) noexcept{
                     return m[ind];
                 }
-                const T& operator[](std::size_t ind) const noexcept{
+                constexpr const T& operator[](std::size_t ind) const noexcept{
                     return m[ind];
                 }
-                T& x(){
+                constexpr T& x(){
                     return m[0uz];
                 }
-                const T& x() const{
+                constexpr const T& x() const{
                     return m[0uz];
                 }
-                T& y() requires(size()>1){
+                constexpr T& y() requires(size()>1){
                     return m[1uz];
                 }
-                const T& y() const requires(size()>1){
+                constexpr const T& y() const requires(size()>1){
                     return m[1uz];
                 }
-                vec& operator+=(vec other){
+                constexpr T& z() requires(size()>2){
+                    return m[2uz];
+                }
+                constexpr const T& z() const requires(size()>2){
+                    return m[2uz];
+                }
+                constexpr vec& operator+=(vec other){
                     (..., (m[indices] += other[indices]));
                     return *this;
                 }
-                vec operator+(this vec lhs,vec rhs){
+                constexpr vec operator+(this vec lhs,vec rhs){
                     return lhs += rhs;
                 }
-                vec operator-() const{
+                constexpr vec operator-() const{
                     return {-m[indices]...};
                 }
-                vec& operator-=(vec other){
+                constexpr vec& operator-=(vec other){
                     (..., (m[indices] -= other[indices]));
                     return *this;
                 }
-                vec operator-(this vec lhs,vec rhs){
+                constexpr vec operator-(this vec lhs,vec rhs){
                     return lhs -= rhs;
                 }
-                vec operator*=(vec other){
+                constexpr vec operator*=(vec other){
                     (..., (m[indices] *= other[indices]));
                     return *this;
                 }
-                vec operator*(this vec lhs,vec rhs){
+                constexpr vec operator*(this vec lhs,vec rhs){
                     return lhs *= rhs;
                 }
-                vec& operator/=(vec other){
+                constexpr vec& operator/=(vec other){
                     (..., (m[indices] /= other[indices]));
                     return *this;
                 }
-                vec operator/(this vec lhs,vec rhs){
+                constexpr vec operator/(this vec lhs,vec rhs){
                     return lhs /= rhs;
                 }
-                vec& operator+=(T scalar){
+                constexpr vec& operator+=(T scalar){
                     (..., (m[indices] += scalar));
                     return *this;
                 }
-                vec operator+(this vec lhs,T scalar){
+                constexpr vec operator+(this vec lhs,T scalar){
                     return lhs += scalar;
                 }
-                vec& operator-=(T scalar){
+                constexpr vec& operator-=(T scalar){
                     (..., (m[indices] -= scalar));
                     return *this;
                 }
-                vec operator-(this vec lhs,T scalar){
+                constexpr vec operator-(this vec lhs,T scalar){
                     return lhs -= scalar;
                 }
-                vec& operator*=(T scalar){
+                constexpr vec& operator*=(T scalar){
                     (..., (m[indices] *= scalar));
                     return *this;
                 }
-                vec operator*(this vec lhs,T scalar){
+                constexpr vec operator*(this vec lhs,T scalar){
                     return lhs *= scalar;
                 }
-                vec& operator/=(T scalar){
+                constexpr vec& operator/=(T scalar){
                     (..., (m[indices] /= scalar));
                     return *this;
                 }
-                vec operator/(this vec lhs,T scalar){
+                constexpr vec operator/(this vec lhs,T scalar){
                     return lhs /= scalar;
                 }
-                bool operator==(vec other) const{
+                constexpr bool operator==(vec other) const{
                     return (...&&(m[indices] == other[indices]));
                 }
         };
