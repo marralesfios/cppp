@@ -54,6 +54,9 @@ namespace cppp{
             T* begin() const{
                 return m;
             }
+            T* data() const{
+                return m;
+            }
             T* end() const{
                 return e;
             }
