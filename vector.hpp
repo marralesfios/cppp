@@ -7,7 +7,7 @@ namespace cppp{
         template<typename T,std::size_t>
         using _repeat_for_pack_t = T;
         template<typename T,std::size_t>
-        T _repeat_for_pack_v(T v){
+        constexpr T _repeat_for_pack_v(T v){
             return v;
         }
         template<typename T,std::size_t ...indices>
@@ -29,6 +29,12 @@ namespace cppp{
                 }
                 constexpr const T& operator[](std::size_t ind) const noexcept{
                     return m[ind];
+                }
+                constexpr T* data(){
+                    return m.data();
+                }
+                constexpr const T* data() const{
+                    return m.data();
                 }
                 constexpr T& x(){
                     return m[0uz];
