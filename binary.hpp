@@ -57,7 +57,8 @@ namespace cppp{
                 I low;
                 if constexpr(sizeof...(index)){
                     low = (... | (
-                        static_cast<I>(memory[index]) << (index*CHAR_BIT)
+                        // must static cast the << result since the lhs may be promoted after our static cast
+                        static_cast<I>(static_cast<I>(memory[index]) << (index*CHAR_BIT))
                     ));
                 }else{
                     low = static_cast<I>(0);
