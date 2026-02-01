@@ -8,6 +8,11 @@ namespace cppp{
     namespace detail{
         template<typename T>
         concept unichr = one_of<T,char8_t,char16_t,char32_t>;
+        template<typename T,typename U>
+        class deletable_codecvt_byname : public std::codecvt_byname<T,U,std::mbstate_t>{
+            public:
+                using codecvt_byname::codecvt_byname;
+        };
     }
     template<detail::unichr T,detail::unichr U>
     std::basic_string<U> convert(std::basic_string_view<T> src){
@@ -20,7 +25,7 @@ namespace cppp{
             fixed_array<U> buf{src.size()*sizeof(U)/sizeof(T)};
             std::codecvt_base::result status;
             do{
-                status = std::use_facet<std::codecvt_byname<T,U,std::mbstate_t>>(std::locale::classic()).out(state,src.data(),src.end(),buf.crbegin(),toe,tob);
+                status = detail::deletable_codecvt_byname<T,U>{}.out(state,src.data(),src.end(),buf.crbegin(),toe,tob);
                 if(status==std::codecvt_base::result::error) throw std::logic_error("cppp::convert: "s);
             }while(status==std::codecvt_base::partial);
         }
