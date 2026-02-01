@@ -43,12 +43,12 @@ namespace cppp{
                 fs.rdbuf()->pubseekoff(pos,where);
             }
             std::size_t read(buffer buf){
-                fs.read(reinterpret_cast<char*>(buf.data()),buf.size());
+                fs.read(reinterpret_cast<char*>(buf.data()),static_cast<std::streamsize>(buf.size()));
                 if(fs.eof()){
                     fs.clear(fs.rdstate()&~fs.failbit);
                 }
                 errchk();
-                return fs.gcount();
+                return static_cast<std::size_t>(fs.gcount());
             }
             void errchk() const{
                 if(fs.fail()){
@@ -96,13 +96,13 @@ namespace cppp{
                 return cppp::read<I>(buf.data());
             }
             void write(std::string_view s){
-                fs.write(s.data(),s.size());
+                fs.write(s.data(),static_cast<std::streamsize>(s.size()));
             }
             void write(std::u8string_view s){
-                fs.write(reinterpret_cast<const char*>(s.data()),s.size());
+                fs.write(reinterpret_cast<const char*>(s.data()),static_cast<std::streamsize>(s.size()));
             }
             void write(frozenbuffer buf){
-                fs.write(reinterpret_cast<const char*>(buf.data()),buf.size());
+                fs.write(reinterpret_cast<const char*>(buf.data()),static_cast<std::streamsize>(buf.size()));
             }
             void writeb(std::byte b){
                 fs.put(std::bit_cast<char>(b));

@@ -65,7 +65,7 @@ namespace cppp{
                 if constexpr(std::is_signed_v<I>){
                     return low | static_cast<I>((static_cast<I>(memory[last]&0b0111'1111_b)-static_cast<I>(memory[last]&0b1000'0000_b)) << (last*CHAR_BIT));
                 }else{
-                    return low | (static_cast<I>(memory[last]) << (last*CHAR_BIT));
+                    return low | static_cast<I>(static_cast<I>(memory[last]) << (last*CHAR_BIT));
                 }
             }
         };

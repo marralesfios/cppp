@@ -61,7 +61,7 @@ namespace cppp{
                 return e;
             }
             std::size_t size() const{
-                return e-m;
+                return static_cast<std::size_t>(e-m);
             }
             bool empty() const{
                 return m == e;
