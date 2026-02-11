@@ -21,9 +21,9 @@ namespace cppp{
             }
         }
         public:
-            indexed_array_pool() : data(nullptr), bufsize(0){}
+            constexpr indexed_array_pool() : data(nullptr), bufsize(0){}
             indexed_array_pool(const indexed_array_pool&) = delete;
-            indexed_array_pool(indexed_array_pool&& other) noexcept : free(std::move(other)), data(std::exchange(other.data,nullptr)), bufsize(std::exchange(other.bufsize,0)){}
+            constexpr indexed_array_pool(indexed_array_pool&& other) noexcept : free(std::move(other)), data(std::exchange(other.data,nullptr)), bufsize(std::exchange(other.bufsize,0)){}
             indexed_array_pool operator=(const indexed_array_pool&) = delete;
             indexed_array_pool& operator=(indexed_array_pool&& other) noexcept{
                 delete_buffer();
@@ -32,7 +32,7 @@ namespace cppp{
                 return *this;
             }
             template<typename ...A>
-            std::uint64_t emplace(A&& ...a){
+            std::uint64_t emplace(A&& ...a) noexcept(std::is_nothrow_move_constructible<T> || std::is_nothrow_copy_constructible_v<T>){
                 std::uint64_t i = free.allocate();
                 if(i>bufsize){
                     std::uint64_t nbufsize = bufsize*2;
@@ -69,14 +69,14 @@ namespace cppp{
                 free.deallocate(i);
                 data[i].~T();
             }
-            T& operator[](std::size_t i){
+            constexpr T& operator[](std::size_t i) noexcept{
                 return data[i];
             }
-            const T& operator[](std::size_t i) const{
+            constexpr const T& operator[](std::size_t i) const noexcept{
                 return data[i];
             }
             template<typename F>
-            void for_each_index(const F& fn){
+            constexpr void for_each_index(const F& fn) noexcept(noexcept(fn(std::declval<std::uint64_t>()))){
                 auto hole = free.holes().begin();
                 const auto last_hole = free.holes().end();
                 for(std::uint64_t i=0;i<free.size();++i){
