@@ -1,6 +1,7 @@
 #pragma once
 #include"template-string.hpp"
 #include"string.hpp"
+#include<format>
 namespace cppp{
     template<typename T>
     str to_u8string(T&& v){
