@@ -6,9 +6,9 @@ namespace cppp{
     class scptr : public ptr<T>{
         public:
             using ptr<T>::ptr;
-            scptr(T*&& p) : ptr<T>(p){}
-            scptr(const scptr& cpy) : ptr<T>(cpy?new T(*cpy):nullptr){}
-            scptr& operator=(const scptr& cpy){
+            constexpr scptr(T*&& p) noexcept : ptr<T>(p){}
+            constexpr scptr(const scptr& cpy) : ptr<T>(cpy?new T(*cpy):nullptr){}
+            constexpr scptr& operator=(const scptr& cpy){
                 this->reset(cpy?new T(*cpy):nullptr);
                 return *this;
             }
@@ -28,33 +28,33 @@ namespace cppp{
             return nullptr;
         }
         public:
-            dcptr() : p(nullptr), cloner(nullptr){}
+            constexpr dcptr() noexcept : p(nullptr), cloner(nullptr){}
             dcptr(const dcptr& other) : p(other._clone()), cloner(other.cloner){}
-            dcptr(dcptr&& other) noexcept : p(std::move(other.p)), cloner(other.cloner){}
+            constexpr dcptr(dcptr&& other) noexcept : p(std::move(other.p)), cloner(other.cloner){}
             template<std::derived_from<T> U>
             dcptr(const dcptr<U>& other) : p(other._clone()), cloner(other.cloner){}
             template<std::derived_from<T> U>
-            dcptr(dcptr<U>&& other) noexcept : p(std::move(other.p)), cloner(other.cloner){}
+            constexpr dcptr(dcptr<U>&& other) noexcept : p(std::move(other.p)), cloner(other.cloner){}
             template<typename ...Ca>
             static dcptr<T> construct(Ca&& ...ca){
                 return {new T(std::forward<Ca>(ca)...)};
             }
-            T* get(){
+            constexpr T* get() noexcept{
                 return p.get();
             }
-            const T* get() const{
+            constexpr const T* get() const noexcept{
                 return p.get();
             }
-            T& operator*(){
+            constexpr T& operator*() noexcept{
                 return *p;
             }
-            const T& operator*() const{
+            constexpr const T& operator*() const noexcept{
                 return *p;
             }
-            T* operator->(){
+            constexpr T* operator->() noexcept{
                 return p.get();
             }
-            const T* operator->() const{
+            constexpr const T* operator->() const noexcept{
                 return p.get();
             }
             dcptr& operator=(const dcptr& other){
@@ -62,7 +62,7 @@ namespace cppp{
                 cloner = other.cloner;
                 return *this;
             }
-            dcptr& operator=(dcptr&& other){
+            constexpr dcptr& operator=(dcptr&& other) noexcept{
                 p = std::move(other.p);
                 cloner = other.cloner;
                 return *this;
@@ -74,7 +74,7 @@ namespace cppp{
                 return *this;
             }
             template<std::derived_from<T> U>
-            dcptr& operator=(dcptr<U>&& other){
+            constexpr dcptr& operator=(dcptr<U>&& other) noexcept{
                 p = std::move(other);
                 cloner = other.cloner;
                 return *this;
