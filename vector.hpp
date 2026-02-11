@@ -19,7 +19,7 @@ namespace cppp{
             private:
                 std::array<T,size()> m;
             public:
-                constexpr vec() = default;
+                constexpr vec() noexcept = default;
                 constexpr vec(T v) noexcept: m{_repeat_for_pack_v<T,indices>(v)...}{}
                 constexpr vec(_repeat_for_pack_t<T,indices>... v) noexcept : m{v...}{}
                 template<typename U> requires(std::constructible_from<T,U>)
@@ -30,62 +30,62 @@ namespace cppp{
                 constexpr const T& operator[](std::size_t ind) const noexcept{
                     return m[ind];
                 }
-                constexpr T* data(){
+                constexpr T* data() noexcept{
                     return m.data();
                 }
-                constexpr const T* data() const{
+                constexpr const T* data() const noexcept{
                     return m.data();
                 }
-                constexpr T& x(){
+                constexpr T& x() noexcept{
                     return m[0uz];
                 }
-                constexpr const T& x() const{
+                constexpr const T& x() const noexcept{
                     return m[0uz];
                 }
-                constexpr T& y() requires(size()>1){
+                constexpr T& y() noexcept requires(size()>1){
                     return m[1uz];
                 }
-                constexpr const T& y() const requires(size()>1){
+                constexpr const T& y() const noexcept requires(size()>1){
                     return m[1uz];
                 }
-                constexpr T& z() requires(size()>2){
+                constexpr T& z() noexcept requires(size()>2){
                     return m[2uz];
                 }
-                constexpr const T& z() const requires(size()>2){
+                constexpr const T& z() const noexcept requires(size()>2){
                     return m[2uz];
                 }
-                constexpr vec& operator+=(vec other){
+                constexpr vec& operator+=(vec other) noexcept{
                     (..., (m[indices] += other[indices]));
                     return *this;
                 }
-                constexpr vec operator+(this vec lhs,vec rhs){
+                constexpr vec operator+(this vec lhs,vec rhs) noexcept{
                     return lhs += rhs;
                 }
-                constexpr vec operator-() const{
+                constexpr vec operator-() const noexcept{
                     return {-m[indices]...};
                 }
-                constexpr vec& operator-=(vec other){
+                constexpr vec& operator-=(vec other) noexcept{
                     (..., (m[indices] -= other[indices]));
                     return *this;
                 }
-                constexpr vec operator-(this vec lhs,vec rhs){
+                constexpr vec operator-(this vec lhs,vec rhs) noexcept{
                     return lhs -= rhs;
                 }
-                constexpr vec operator*=(vec other){
+                constexpr vec operator*=(vec other) noexcept{
                     (..., (m[indices] *= other[indices]));
                     return *this;
                 }
-                constexpr vec operator*(this vec lhs,vec rhs){
+                constexpr vec operator*(this vec lhs,vec rhs) noexcept{
                     return lhs *= rhs;
                 }
-                constexpr vec& operator/=(vec other){
+                constexpr vec& operator/=(vec other) noexcept{
                     (..., (m[indices] /= other[indices]));
                     return *this;
                 }
-                constexpr vec operator/(this vec lhs,vec rhs){
+                constexpr vec operator/(this vec lhs,vec rhs) noexcept{
                     return lhs /= rhs;
                 }
-                constexpr bool operator==(vec other) const{
+                constexpr bool operator==(vec other) const noexcept{
                     return (...&&(m[indices] == other[indices]));
                 }
         };
