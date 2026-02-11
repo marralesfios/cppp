@@ -17,53 +17,53 @@ namespace cppp{
                 return {m,e};
             }
             template<typename R> requires(std::ranges::contiguous_range<R>&&std::ranges::sized_range<R>)
-            view(R&& r) : m(std::ranges::data(r)), e(m+std::ranges::size(r)){}
-            view<copy_const_t<T,std::byte>> to_bytes() const{
+            constexpr view(R&& r) noexcept : m(std::ranges::data(r)), e(m+std::ranges::size(r)){}
+            constexpr view<copy_const_t<T,std::byte>> to_bytes() const noexcept{
                 using M = copy_const_t<T,std::byte>*;
                 return {reinterpret_cast<M>(m),reinterpret_cast<M>(e)};
             }
-            T& operator[](std::size_t i) const{
+            constexpr T& operator[](std::size_t i) const noexcept{
                 return m[i];
             }
-            T& front() const{
+            constexpr T& front() const noexcept{
                 return *m;
             }
-            T& back() const{
+            constexpr T& back() const noexcept{
                 return *(e-1);
             }
-            view<T> partition(std::size_t n){
+            constexpr view<T> partition(std::size_t n) noexcept{
                 view<T> cutout{m,m+n};
                 m += n;
                 return cutout;
             }
-            T& pop_front(){
+            constexpr T& pop_front() noexcept{
                 return *m++;
             }
-            T& pop_back(){
+            constexpr T& pop_back() noexcept{
                 return *--e;
             }
-            T* read(std::size_t n=1uz){
+            constexpr T* read(std::size_t n=1uz) noexcept{
                 return std::exchange(m,m+n);
             }
-            view<T> subview(std::size_t start,std::size_t len=-1uz) const{
+            constexpr view<T> subview(std::size_t start,std::size_t len=-1uz) const noexcept{
                 return view<T>(m+start,std::min(len,size()));
             }
-            view<T> slice(std::size_t start,std::size_t stop=-1uz) const{
+            constexpr view<T> slice(std::size_t start,std::size_t stop=-1uz) const noexcept{
                 return view<T>(m+start,m+std::min(stop,size()));
             }
-            T* begin() const{
+            constexpr T* begin() const noexcept{
                 return m;
             }
-            T* data() const{
+            constexpr T* data() const noexcept{
                 return m;
             }
-            T* end() const{
+            constexpr T* end() const noexcept{
                 return e;
             }
-            std::size_t size() const{
+            constexpr std::size_t size() const noexcept{
                 return static_cast<std::size_t>(e-m);
             }
-            bool empty() const{
+            constexpr bool empty() const noexcept{
                 return m == e;
             }
     };
