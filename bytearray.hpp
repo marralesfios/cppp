@@ -21,13 +21,13 @@ namespace cppp{
             }
         }
         public:
-            bytes() = default;
-            bytes(bytes&&) = default;
-            bytes& operator=(bytes&&) = default;
+            constexpr bytes() noexcept = default;
+            constexpr bytes(bytes&&) noexcept = default;
+            constexpr bytes& operator=(bytes&&) noexcept = default;
             bytes(std::initializer_list<std::byte> b){
                 std::copy_n(b.begin(),b.size(),append(b.size()));
             }
-            bool empty() const{
+            constexpr bool empty() const noexcept{
                 return *_l == 0uz;
             }
             void append(frozenbuffer b){
@@ -75,42 +75,42 @@ namespace cppp{
             void skip(std::size_t amnt){
                 reserve(*_l += amnt);
             }
-            std::byte& operator[](std::size_t ind){
+            constexpr std::byte& operator[](std::size_t ind) noexcept{
                 return (*_m)[ind];
             }
-            const std::byte& operator[](std::size_t ind) const{
+            constexpr const std::byte& operator[](std::size_t ind) const noexcept{
                 return (*_m)[ind];
             }
-            std::byte* data(){
+            constexpr std::byte* data() noexcept{
                 return *_m;
             }
-            const std::byte* data() const{
+            constexpr const std::byte* data() const noexcept{
                 return *_m;
             }
             using iterator = std::byte*;
             using const_iterator = const std::byte*;
-            iterator begin(){
+            constexpr iterator begin() noexcept{
                 return *_m;
             }
-            const_iterator cbegin() const{
+            constexpr const_iterator cbegin() const noexcept{
                 return *_m;
             }
-            const_iterator begin() const{
+            constexpr const_iterator begin() const noexcept{
                 return *_m;
             }
-            iterator end(){
+            constexpr iterator end() noexcept{
                 return *_m+*_l;
             }
-            const_iterator cend() const{
+            constexpr const_iterator cend() const noexcept{
                 return *_m+*_l;
             }
-            const_iterator end() const{
+            constexpr const_iterator end() const noexcept{
                 return *_m+*_l;
             }
-            std::size_t size() const{
+            constexpr std::size_t size() const noexcept{
                 return *_l;
             }
-            std::size_t capacity() const{
+            constexpr std::size_t capacity() const noexcept{
                 return *_c;
             }
             void shrink_to_fit(){
