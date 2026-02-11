@@ -13,7 +13,7 @@ namespace cppp{
             }
         }
         public:
-            optional() noexcept : has_value(false){}
+            constexpr optional() noexcept : has_value(false){}
             template<typename ...A>
             optional(std::in_place_t,A&& ...a) noexcept(std::is_nothrow_constructible_v<T,A...>) : has_value(true){
                 new(data) T(std::forward<A>(a)...);
@@ -94,7 +94,7 @@ namespace cppp{
             const T* ptr() const{
                 return has_value?reinterpret_cast<const T*>(data):nullptr;
             }
-            explicit operator bool() const noexcept{
+            constexpr explicit operator bool() const noexcept{
                 return has_value;
             }
             ~optional(){
