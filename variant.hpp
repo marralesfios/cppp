@@ -50,7 +50,7 @@ namespace cppp{
             }
         }
         template<typename Fn,std::size_t i> requires(i<sizeof...(Tv))
-        decltype(auto) _dispatch(Fn& fn){
+        constexpr decltype(auto) _dispatch(Fn& fn){
             if(i==num){
                 return std::forward<Fn>(fn)(*static_cast<compat::index_pack<i,Tv...>*>(data));
             }else if constexpr(i+1uz==sizeof...(Tv)){
@@ -60,7 +60,7 @@ namespace cppp{
             }
         }
         template<typename Fn,std::size_t i> requires(i<sizeof...(Tv))
-        decltype(auto) _dispatch(Fn&& fn) const{
+        constexpr decltype(auto) _dispatch(Fn&& fn) const{
             if(i==num){
                 return std::forward<Fn>(fn)(*static_cast<const compat::index_pack<i,Tv...>*>(data));
             }else if constexpr(i+1uz==sizeof...(Tv)){
@@ -73,72 +73,72 @@ namespace cppp{
             template<typename T>
             constexpr static std::size_t index_of = detail::pack_find_i<T,Tv...>;
             constexpr static std::size_t none{std::numeric_limits<std::size_t>::max()};
-            heap_variant() : data(nullptr), num(0uz){}
-            explicit heap_variant(std::size_t num,void* data) : data(data), num(num){}
+            constexpr heap_variant() noexcept : data(nullptr), num(0uz){}
+            constexpr explicit heap_variant(std::size_t num,void* data) noexcept : data(data), num(num){}
             template<typename T>
             heap_variant(T&& inst) : data(new std::remove_cvref_t<T>(std::forward<T>(inst))), num(index_of<std::remove_cvref_t<T>>){}
             template<typename T,typename ...A>
             heap_variant(emplace_tag_t<T>,A&& ...argv) : data(new T(std::forward<A>(argv)...)), num(index_of<std::remove_cvref_t<T>>){}
             heap_variant(const heap_variant&) = delete;
-            heap_variant(heap_variant&& other) noexcept : data(std::exchange(other.data,nullptr)), num(other.num){}
+            constexpr heap_variant(heap_variant&& other) noexcept : data(std::exchange(other.data,nullptr)), num(other.num){}
             heap_variant& operator=(const heap_variant&) = delete;
-            heap_variant& operator=(heap_variant&& other) noexcept{
+            constexpr heap_variant& operator=(heap_variant&& other) noexcept{
                 reset(other.num,std::exchange(other.data,nullptr));
                 return *this;
             }
-            void reset() noexcept{
+            constexpr void reset() noexcept{
                 data = nullptr;
             }
-            void reset(std::size_t n,void* d) noexcept{
+            constexpr void reset(std::size_t n,void* d) noexcept{
                 destroy();
                 num = n;
                 data = d;
             }
             template<typename Fn>
-            decltype(auto) dispatch(Fn&& fn){
+            constexpr decltype(auto) dispatch(Fn&& fn){
                 assert(*this);
                 return _dispatch<Fn,0uz>(std::forward<Fn>(fn));
             }
             template<typename Fn>
-            decltype(auto) dispatch(Fn&& fn) const{
+            constexpr decltype(auto) dispatch(Fn&& fn) const{
                 assert(*this);
                 return _dispatch<Fn,0uz>(std::forward<Fn>(fn));
             }
             template<typename T,typename ...A>
-            void emplace(A&& ...argv){
+            constexpr void emplace(A&& ...argv){
                 reset(index_of<T>,new T(std::forward<A>(argv)...));
             }
             template<std::size_t i,typename ...A>
-            void emplace(A&& ...argv){
+            constexpr void emplace(A&& ...argv){
                 using T = compat::index_pack<i,Tv...>;
                 reset(i,new T(std::forward<A>(argv)...));
             }
             template<typename T>
-            T& get() noexcept{
+            constexpr T& get() noexcept{
                 return *static_cast<T*>(data);
             }
             template<typename T>
-            const T& get() const noexcept{
+            constexpr const T& get() const noexcept{
                 return *static_cast<const T*>(data);
             }
             template<std::size_t i>
-            compat::index_pack<i,Tv...>& get() noexcept{
+            constexpr compat::index_pack<i,Tv...>& get() noexcept{
                 return get<compat::index_pack<i,Tv...>>();
             }
             template<std::size_t i>
-            const compat::index_pack<i,Tv...>& get() const noexcept{
+            constexpr const compat::index_pack<i,Tv...>& get() const noexcept{
                 return get<compat::index_pack<i,Tv...>>();
             }
-            std::size_t index() const noexcept{
+            constexpr std::size_t index() const noexcept{
                 return num;
             }
-            std::size_t tell() const noexcept{
+            constexpr std::size_t tell() const noexcept{
                 return empty()?none:num;
             }
-            bool empty() const noexcept{
+            constexpr bool empty() const noexcept{
                 return data == nullptr;
             }
-            explicit operator bool() const noexcept{
+            constexpr explicit operator bool() const noexcept{
                 return data;
             }
             ~heap_variant(){
