@@ -23,15 +23,15 @@ namespace cppp{
     template<std::size_t l>
     using frozenstaticbuffer = std::span<const std::byte,l>;
     template<typename T>
-    staticbuffer<sizeof(T)> memory(T* v){
+    staticbuffer<sizeof(T)> memory(T* v) noexcept{
         return staticbuffer<sizeof(T)>{reinterpret_cast<std::byte*>(v),sizeof(T)};
     }
     template<typename T>
-    frozenstaticbuffer<sizeof(T)> memory(const T* v){
+    frozenstaticbuffer<sizeof(T)> memory(const T* v) noexcept{
         return frozenstaticbuffer<sizeof(T)>{reinterpret_cast<const std::byte*>(v),sizeof(T)};
     }
     template<template_string ts>
-    frozenstaticbuffer<ts.size()> operator ""_bbuf(){
+    frozenstaticbuffer<ts.size()> operator ""_bbuf() noexcept{
         return std::as_bytes(std::span<const char,ts.size()>(ts));
     }
     template<typename T>
@@ -42,7 +42,7 @@ namespace cppp{
         template<std::size_t... index,std::size_t last>
         struct _expandbytes<std::integer_sequence<std::size_t,index...>,last>{
             template<typename I>
-            static void write(std::byte* memory,I number){
+            static void write(std::byte* memory,I number) noexcept{
                 if constexpr(!sizeof...(index)){
                     *memory = static_cast<std::byte>(number);
                 }else{
@@ -53,7 +53,7 @@ namespace cppp{
                 }
             }
             template<typename I>
-            static I read(const std::byte* memory){
+            static I read(const std::byte* memory) noexcept{
                 I low;
                 if constexpr(sizeof...(index)){
                     low = (... | (
@@ -72,7 +72,7 @@ namespace cppp{
         };
     }
     template<is_int I>
-    void write(std::byte* memory,I number){
+    void write(std::byte* memory,I number) noexcept{
         if constexpr(std::is_signed_v<I>){
             write<std::make_unsigned_t<I>>(memory,static_cast<std::make_unsigned_t<I>>(number));
         }else{
@@ -80,7 +80,7 @@ namespace cppp{
         }
     }
     template<is_int I>
-    I read(const std::byte* memory){
+    I read(const std::byte* memory) noexcept{
         return detail::_expandbytes<std::make_index_sequence<sizeof(I)-1uz>,sizeof(I)-1uz>::template read<I>(memory);
     }
 }
