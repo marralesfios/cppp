@@ -54,6 +54,15 @@ namespace cppp{
                 constexpr const T& z() const noexcept requires(size()>2){
                     return m[2uz];
                 }
+                constexpr vec xproj() const noexcept requires(size()>1){
+                    return vec((indices == 0uz ? x() : T())...);
+                }
+                constexpr vec yproj() const noexcept requires(size()>1){
+                    return vec((indices == 1uz ? y() : T())...);
+                }
+                constexpr vec zproj() const noexcept requires(size()>2){
+                    return vec((indices == 2uz ? z() : T())...);
+                }
                 constexpr vec& operator+=(vec other) noexcept{
                     (..., (m[indices] += other[indices]));
                     return *this;
