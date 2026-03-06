@@ -8,6 +8,10 @@ namespace cppp{
         struct static_char_storage{
             constexpr static CharT mem[]{ch...};
         };
+        template<typename CharT>
+        struct static_char_storage<CharT>{
+            constexpr static const CharT* mem{nullptr};
+        };
     }
     template<typename CharT,std::size_t l>
     struct basic_template_string{
