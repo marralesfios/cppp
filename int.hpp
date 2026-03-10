@@ -13,6 +13,9 @@ namespace cppp{
         consteval std::byte operator""_b(unsigned long long x){
             return safe_cast<std::byte>(x);
         }
+        consteval std::byte operator""_b(char c){
+            return safe_cast<std::byte>(c);
+        }
         #define CPPP_DEFINE_INTEGRAL_LITERALS(width) consteval std::uint ## width ## _t operator""_u ## width (unsigned long long x){ return safe_cast<std::uint ## width ## _t>(x); } consteval std::int ## width ## _t operator""_s ## width (unsigned long long x){ return safe_cast<std::int ## width ## _t>(x); }
         CPPP_DEFINE_INTEGRAL_LITERALS(8);
         CPPP_DEFINE_INTEGRAL_LITERALS(16);

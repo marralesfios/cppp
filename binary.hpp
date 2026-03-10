@@ -1,5 +1,6 @@
 #pragma once
 #include"template-string.hpp"
+#include"int.hpp"
 #include<type_traits>
 #include<concepts>
 #include<cstddef>
@@ -8,14 +9,6 @@
 #include<climits>
 #include<span>
 namespace cppp{
-    inline namespace literals{
-        consteval inline std::byte operator ""_b(unsigned long long x){
-            return static_cast<std::byte>(x);
-        }
-        consteval inline std::byte operator ""_b(char c){
-            return static_cast<std::byte>(c);
-        }
-    }
     using buffer = std::span<std::byte>;
     template<std::size_t l>
     using staticbuffer = std::span<std::byte,l>;
