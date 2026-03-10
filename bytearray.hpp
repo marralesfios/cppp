@@ -25,29 +25,28 @@ namespace cppp{
             constexpr bytes(bytes&&) noexcept = default;
             constexpr bytes& operator=(bytes&&) noexcept = default;
             bytes(std::initializer_list<std::byte> b){
-                std::copy_n(b.begin(),b.size(),append(b.size()));
+                std::copy_n(b.begin(),b.size(),resb(b.size()));
+            }
+            bytes(frozenbuffer b){
+                append(b);
             }
             constexpr bool empty() const noexcept{
                 return *_l == 0uz;
             }
             void append(frozenbuffer b){
-                std::copy_n(b.data(),b.size(),append(b.size()));
+                std::copy_n(b.data(),b.size(),resb(b.size()));
             }
-            std::byte* append(std::size_t n){
+            std::byte* resb(std::size_t n){
                 std::size_t old_size = *_l;
                 resize(*_l+n);
                 return *_m+old_size;
             }
-            template<std::size_t n>
-            std::span<std::byte,n> append(){
-                return std::span<std::byte,n>(append(n),n);
-            }
             void append(std::byte v){
-                *append(1uz) = v;
+                *resb(1uz) = v;
             }
             template<typename I>
             void appendl(I v){
-                write<I>(append(sizeof(I)),v);
+                write<I>(resb(sizeof(I)),v);
             }
             void reserve(std::size_t ns){
                 while(ns>*_c){
@@ -60,9 +59,12 @@ namespace cppp{
                 _reallocate();
                 _l = ns;
             }
-            void resize(std::size_t ns,std::byte b=std::byte{0}){
-                _c = ns;
-                _reallocate();
+            void resize(std::size_t ns){
+                reserve(ns);
+                _l = ns;
+            }
+            void resize(std::size_t ns,std::byte b){
+                reserve(ns);
                 if(ns>*_l){
                     std::fill(*_m+*_l,*_m+ns,b);
                 }
@@ -71,11 +73,6 @@ namespace cppp{
             void clear(){
                 _c = _l = 0;
                 _reallocate();
-            }
-            void skip(std::size_t amnt){
-                std::size_t nl = *_l+amnt;
-                reserve(nl);
-                _l = nl;
             }
             constexpr std::byte& operator[](std::size_t ind) noexcept{
                 return (*_m)[ind];
