@@ -73,7 +73,9 @@ namespace cppp{
                 _reallocate();
             }
             void skip(std::size_t amnt){
-                reserve(*_l += amnt);
+                std::size_t nl = *_l+amnt;
+                reserve(nl);
+                _l = nl;
             }
             constexpr std::byte& operator[](std::size_t ind) noexcept{
                 return (*_m)[ind];
