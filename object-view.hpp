@@ -13,6 +13,12 @@ namespace cppp{
         public:
             view(T* m,T* e) : m(m), e(e){}
             view(T* m,std::size_t s) : m(m), e(m+s){}
+// this may dangle, but is OK when used responsibly
+// libstdc++ std::span also suppresses this warning for its initializer_list constructor
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winit-list-lifetime"
+            view(std::initializer_list<T> il) : m(il.begin()), e(il.end()){}
+#pragma GCC diagnostic pop
             template<typename R> requires(std::ranges::contiguous_range<R>&&std::ranges::sized_range<R>)
             constexpr view(R&& r) noexcept : m(std::ranges::data(r)), e(m+std::ranges::size(r)){}
             constexpr view<copy_const_t<T,std::byte>> to_bytes() const noexcept{
