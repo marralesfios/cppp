@@ -54,11 +54,6 @@ namespace cppp{
                 }
                 _reallocate();
             }
-            void uninitialized_resize(std::size_t ns){
-                _c = ns;
-                _reallocate();
-                _l = ns;
-            }
             void resize(std::size_t ns){
                 reserve(ns);
                 _l = ns;
