@@ -13,6 +13,10 @@ namespace cppp{
             fixed_array(R&& ran) : fixed_array(std::ranges::size(ran)){
                 std::ranges::copy(ran,begin());
             }
+            // special initializer_list ctor to prevent {element} from matching the size_t ctor
+            fixed_array(std::initializer_list<T> il) : fixed_array(std::ranges::size(il)){
+                std::ranges::copy(il,begin());
+            }
             // don't take a std::span or we may conflict with the above
             fixed_array(T* m,std::size_t n) : buf(m,n){}
             fixed_array(std::size_t sz) : buf(new T[sz],sz){}
