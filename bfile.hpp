@@ -18,7 +18,7 @@ namespace cppp{
         public:
             //Make tellg() return value opaque, as it should be.
             class pos_buf{
-                friend class BinaryFile;
+                friend BinaryFile;
                 std::fstream::pos_type v;
                 pos_buf(std::fstream::pos_type v) : v(v){}
             };

@@ -16,7 +16,7 @@ namespace cppp{
     template<typename T>
     class dcptr{
         template<typename U>
-        friend class dcptr;
+        friend dcptr;
         ptr<T> p;
         void*(*cloner)(const void*);
         template<std::derived_from<T> U>

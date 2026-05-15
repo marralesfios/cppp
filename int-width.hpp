@@ -10,7 +10,7 @@ namespace cppp::unsigned_limits{
     template<std::uintmax_t num,typename A,typename ...T>
     struct smallest_fit_in<num,A,T...>{
         using type = std::conditional_t<
-            num < static_cast<std::uintmax_t>(std::numeric_limits<A>::max()),
+            num <= static_cast<std::uintmax_t>(std::numeric_limits<A>::max()),
             A,
             typename smallest_fit_in<num,T...>::type
         >;
