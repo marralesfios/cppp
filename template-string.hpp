@@ -3,16 +3,6 @@
 #include<cstdint>
 #include<string>
 namespace cppp{
-    namespace detail{
-        template<typename CharT,CharT ...ch>
-        struct static_char_storage{
-            constexpr static CharT mem[]{ch...};
-        };
-        template<typename CharT>
-        struct static_char_storage<CharT>{
-            constexpr static const CharT* mem{nullptr};
-        };
-    }
     template<typename CharT,std::size_t l>
     struct basic_template_string{
         CharT arr[l];
@@ -22,7 +12,7 @@ namespace cppp{
             std::copy_n(a,l,arr);
         }
         constexpr basic_template_string(CharT v) requires(l==2) : arr{v,static_cast<CharT>(0)}{}
-        consteval std::size_t size() const{
+        constexpr std::size_t size() const{
             return l-1uz;
         }
         template<typename OtherCt>
@@ -80,10 +70,10 @@ namespace cppp{
                 std::copy_n(right.arr,l-n+1,arr+n-1);
             }
             template<typename C,std::size_t u,std::size_t v>
-            friend consteval basic_template_string<C,u+v-1uz> operator+(basic_template_string<C,u>,basic_template_string<C,v>);
+            friend constexpr basic_template_string<C,u+v-1uz> operator+(basic_template_string<C,u>,basic_template_string<C,v>);
     };
     template<typename C,std::size_t u,std::size_t v>
-    consteval basic_template_string<C,u+v-1uz> operator+(basic_template_string<C,u> lhs,basic_template_string<C,v> rhs){
+    constexpr basic_template_string<C,u+v-1uz> operator+(basic_template_string<C,u> lhs,basic_template_string<C,v> rhs){
         return {lhs,rhs};
     }
     template<typename CharT>
@@ -93,10 +83,6 @@ namespace cppp{
     template<std::size_t n>
     using template_string = basic_template_string<char8_t,n>;
     
-    template<typename CharU,basic_template_string ts>
-    constexpr std::basic_string_view<CharU> ts_charconv_to_sv = []<std::size_t ...i>(std::index_sequence<i...>){
-            return std::basic_string_view<CharU>(detail::static_char_storage<CharU,static_cast<CharU>(ts[i])...>{}.mem,ts.size());
-        }(std::make_index_sequence<ts.size()>{});
     inline namespace literals{
         template<basic_template_string s>
         consteval decltype(s) operator ""_ts(){
