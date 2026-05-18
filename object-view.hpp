@@ -5,6 +5,7 @@
 #include<cmath>
 #include<ranges>
 #include"type_traits/copy-const.hpp"
+#include"binary.hpp"
 namespace cppp{
     template<typename T>
     class view{
@@ -74,4 +75,8 @@ namespace cppp{
     view(const R& r) -> view<std::ranges::range_value_t<R>>;
     using byte_view = view<std::byte>;
     using frozen_byte_view = view<const std::byte>;
+    template<typename I>
+    I read(frozen_byte_view& v){
+        return read<I>(v.read(sizeof(I)));
+    }
 }
