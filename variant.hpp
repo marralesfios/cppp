@@ -132,6 +132,10 @@ namespace cppp{
             constexpr std::size_t index() const noexcept{
                 return num;
             }
+            template<typename T>
+            constexpr bool has() const noexcept{
+                return !empty() && num == index_of<T>;
+            }
             constexpr std::size_t tell() const noexcept{
                 return empty()?none:num;
             }
