@@ -80,7 +80,7 @@ namespace cppp{
                 std::size_t n = num;
                 template for(constexpr std::meta::info alt : {^^Tv...}){
                     if(!(n--)){
-                        return std::forward<Fn>(fn)(*static_cast<const [:alt:]*>(data));
+                        return std::forward<Fn>(fn)(*static_cast<[:alt:]*>(data));
                     }
                 }
                 std::unreachable();
@@ -94,6 +94,26 @@ namespace cppp{
                     }
                 }
                 std::unreachable();
+            }
+            template<typename Fn>
+            constexpr void partial_visit(Fn&& fn){
+                std::size_t n = num;
+                template for(constexpr std::meta::info alt : {^^Tv...}){
+                    if constexpr(std::invocable<Fn,typename[:alt:]&>) if(!(n--)){
+                        std::forward<Fn>(fn)(*static_cast<[:alt:]*>(data));
+                        return;
+                    }
+                }
+            }
+            template<typename Fn>
+            constexpr void partial_visit(Fn&& fn) const{
+                std::size_t n = num;
+                template for(constexpr std::meta::info alt : {^^Tv...}){
+                    if constexpr(std::invocable<Fn,const typename[:alt:]&>) if(!(n--)){
+                        std::forward<Fn>(fn)(*static_cast<const [:alt:]*>(data));
+                        return;
+                    }
+                }
             }
             template<typename T,typename ...A>
             constexpr void emplace(A&& ...argv){
