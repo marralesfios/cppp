@@ -2,42 +2,34 @@
 #include"polyfill/pack-indexing.hpp"
 #include"exchange.hpp"
 #include<type_traits>
+#include<stdexcept>
+#include<concepts>
 #include<cassert>
 #include<cstdint>
 #include<utility>
 #include<limits>
+#include<meta>
 namespace cppp{
     template<typename T>
     struct emplace_tag_t{};
     template<typename T>
     constexpr inline emplace_tag_t<T> emplace_tag{};
     namespace detail{
-        template<typename T,typename ...Types>
-        struct pack_find{};
-        template<typename T,typename ...Types>
-        struct pack_find<T,T,Types...>{
-            constexpr static inline std::size_t index = 0uz;
-        };
-        template<typename T,typename U1,typename ...Types> requires(!std::same_as<U1,T>)
-        struct pack_find<T,U1,T,Types...>{
-            constexpr static inline std::size_t index = 1uz;
-        };
-        template<typename T,typename U1,typename U2,typename ...Types> requires(!std::is_same_v<U1,T>&&!std::is_same_v<U2,T>)
-        struct pack_find<T,U1,U2,T,Types...>{
-            constexpr static inline std::size_t index = 2uz;
-        };
-        template<typename T,typename U1,typename U2,typename U3,typename ...Types> requires(!std::is_same_v<U1,T>&&!std::is_same_v<U2,T>&&!std::is_same_v<U3,T>)
-        struct pack_find<T,U1,U2,U3,Types...>{
-            constexpr static inline std::size_t index = pack_find<T,Types...>::index+3uz;
-        };
-        template<typename T,typename ...Types>
-        constexpr inline std::size_t pack_find_i = pack_find<T,Types...>::index;
-        struct destroy{
-            template<typename T>
-            void operator()(T& obj) const noexcept{
-                delete &obj;
+        template<typename T,typename ...P>
+        constexpr inline std::size_t pack_find_i = [] consteval{
+            using namespace std::literals;
+            if constexpr(sizeof...(P) == 0) throw std::logic_error("pack_find_i: searching in empty pack"s);
+            constexpr std::meta::info dt = dealias(^^T);
+            std::size_t i = 0uz;
+            template for(constexpr std::meta::info pv : {dealias(^^P)...}){
+                if(dt == pv) return i;
+                ++i;
             }
-        };
+            std::string tl{(... + (display_string_of(^^P)+", "s))};
+            tl.pop_back();
+            tl.back() = '}';
+            throw std::logic_error("pack_find_i: No type "s+display_string_of(^^T)+" in types {"s+tl);
+        }();
     }
     template<typename ...Tv>
     class heap_variant{
@@ -45,29 +37,16 @@ namespace cppp{
         std::size_t num;
         void destroy() noexcept{
             if(data){
-                dispatch(detail::destroy());
+                dispatch([]<typename T>(T& obj) static{
+                    delete &obj;
+                });
                 data = nullptr;
             }
         }
-        template<typename Fn,std::size_t i> requires(i<sizeof...(Tv))
-        constexpr decltype(auto) _dispatch(Fn& fn){
-            if(i==num){
-                return std::forward<Fn>(fn)(*static_cast<compat::index_pack<i,Tv...>*>(data));
-            }else if constexpr(i+1uz==sizeof...(Tv)){
-                std::unreachable();
-            }else{
-                return _dispatch<Fn,i+1uz>(std::forward<Fn>(fn));
-            }
-        }
-        template<typename Fn,std::size_t i> requires(i<sizeof...(Tv))
-        constexpr decltype(auto) _dispatch(Fn&& fn) const{
-            if(i==num){
-                return std::forward<Fn>(fn)(*static_cast<const compat::index_pack<i,Tv...>*>(data));
-            }else if constexpr(i+1uz==sizeof...(Tv)){
-                std::unreachable();
-            }else{
-                return _dispatch<Fn,i+1uz>(std::forward<Fn>(fn));
-            }
+        heap_variant clone() const{
+            return dispatch([]<typename T>(T& obj) static -> heap_variant {
+                return {obj};
+            });
         }
         public:
             template<typename T>
@@ -75,13 +54,15 @@ namespace cppp{
             constexpr static std::size_t none{std::numeric_limits<std::size_t>::max()};
             constexpr heap_variant() noexcept : data(nullptr), num(0uz){}
             constexpr explicit heap_variant(std::size_t num,void* data) noexcept : data(data), num(num){}
-            template<typename T>
+            template<typename T> requires(... || std::same_as<std::remove_cvref_t<T>,Tv>)
             heap_variant(T&& inst) : data(new std::remove_cvref_t<T>(std::forward<T>(inst))), num(index_of<std::remove_cvref_t<T>>){}
             template<typename T,typename ...A>
             heap_variant(emplace_tag_t<T>,A&& ...argv) : data(new T(std::forward<A>(argv)...)), num(index_of<std::remove_cvref_t<T>>){}
-            heap_variant(const heap_variant&) = delete;
+            heap_variant(const heap_variant& other) : heap_variant(other.clone()){}
             constexpr heap_variant(heap_variant&& other) noexcept : data(std::exchange(other.data,nullptr)), num(other.num){}
-            heap_variant& operator=(const heap_variant&) = delete;
+            heap_variant& operator=(const heap_variant& other){
+                *this = other.clone();
+            }
             constexpr heap_variant& operator=(heap_variant&& other) noexcept{
                 reset(other.num,std::exchange(other.data,nullptr));
                 return *this;
@@ -96,13 +77,23 @@ namespace cppp{
             }
             template<typename Fn>
             constexpr decltype(auto) dispatch(Fn&& fn){
-                assert(*this);
-                return _dispatch<Fn,0uz>(std::forward<Fn>(fn));
+                std::size_t n = num;
+                template for(constexpr std::meta::info alt : {^^Tv...}){
+                    if(!(n--)){
+                        return std::forward<Fn>(fn)(*static_cast<const [:alt:]*>(data));
+                    }
+                }
+                std::unreachable();
             }
             template<typename Fn>
             constexpr decltype(auto) dispatch(Fn&& fn) const{
-                assert(*this);
-                return _dispatch<Fn,0uz>(std::forward<Fn>(fn));
+                std::size_t n = num;
+                template for(constexpr std::meta::info alt : {^^Tv...}){
+                    if(!(n--)){
+                        return std::forward<Fn>(fn)(*static_cast<const [:alt:]*>(data));
+                    }
+                }
+                std::unreachable();
             }
             template<typename T,typename ...A>
             constexpr void emplace(A&& ...argv){
