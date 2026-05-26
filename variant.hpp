@@ -124,8 +124,12 @@ namespace cppp{
                 return num;
             }
             template<typename T>
+            constexpr bool has_unchecked() const noexcept{
+                return num == index_of<T>;
+            }
+            template<typename T>
             constexpr bool has() const noexcept{
-                return !empty() && num == index_of<T>;
+                return !empty() && has_unchecked<T>();
             }
             constexpr std::size_t tell() const noexcept{
                 return empty()?none:num;
