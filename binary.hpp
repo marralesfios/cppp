@@ -65,7 +65,7 @@ namespace cppp{
         };
     }
     template<is_int I>
-    void write(std::byte* memory,I number) noexcept{
+    constexpr void write(std::byte* memory,I number) noexcept{
         if constexpr(std::is_signed_v<I>){
             write<std::make_unsigned_t<I>>(memory,static_cast<std::make_unsigned_t<I>>(number));
         }else{
@@ -73,7 +73,7 @@ namespace cppp{
         }
     }
     template<is_int I>
-    I read(const std::byte* memory) noexcept{
+    constexpr I read(const std::byte* memory) noexcept{
         return detail::_expandbytes<std::make_index_sequence<sizeof(I)-1uz>,sizeof(I)-1uz>::template read<I>(memory);
     }
 }

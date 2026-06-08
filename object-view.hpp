@@ -76,7 +76,7 @@ namespace cppp{
     using byte_view = view<std::byte>;
     using frozen_byte_view = view<const std::byte>;
     template<typename I>
-    I read(frozen_byte_view& v){
+    constexpr I read(frozen_byte_view& v) noexcept{
         return read<I>(v.read(sizeof(I)));
     }
 }
