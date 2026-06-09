@@ -54,6 +54,12 @@ namespace cppp{
                 constexpr const T& z() const noexcept requires(size()>2){
                     return m[2uz];
                 }
+                constexpr T& w() noexcept requires(size()>3){
+                    return m[3uz];
+                }
+                constexpr const T& w() const noexcept requires(size()>3){
+                    return m[3uz];
+                }
                 constexpr vec xproj() const noexcept requires(size()>1){
                     return vec((indices == 0uz ? x() : T())...);
                 }
