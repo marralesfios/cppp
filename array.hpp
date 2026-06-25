@@ -9,6 +9,7 @@ namespace cppp{
     class fixed_array{
         std::span<T> buf;
         public:
+            fixed_array() = default;
             template<std::ranges::sized_range R>
             fixed_array(R&& ran) : fixed_array(std::ranges::size(ran)){
                 std::ranges::copy(ran,begin());
@@ -22,7 +23,7 @@ namespace cppp{
             fixed_array(std::size_t sz) : buf(new T[sz],sz){}
             fixed_array(std::size_t sz,value_init_tag_t) : buf(new T[sz](),sz){}
             template<typename ...C>
-            fixed_array(std::size_t sz,std::in_place_t,C&& ...t) : buf(new T[sz](std::forward<T>(t)...),sz){}
+            fixed_array(std::size_t sz,std::in_place_t,C& ...t) : buf(new T[sz](t...),sz){}
             fixed_array(const fixed_array&) = delete;
             fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,std::span<T>())){}
             fixed_array& operator=(const fixed_array&) = delete;
