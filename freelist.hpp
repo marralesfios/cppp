@@ -9,7 +9,8 @@ namespace cppp{
         zeroing_field<T,true> _size;
         std::set<T,std::greater<T>> list;
         public:
-            freelist(){}
+            freelist() = default;
+            explicit freelist(T v) : _max(v), _size(v){}
             const std::set<T,std::greater<T>>& holes() const{
                 return list;
             }
