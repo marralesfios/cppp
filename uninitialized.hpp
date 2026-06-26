@@ -3,6 +3,9 @@
 #include<cstddef>
 #include<array>
 namespace cppp{
+    #if __cpp_trivial_union >= 202603L
+    #error update this code to use trivial unions
+    #endif
     template<typename T>
     class uninitialized{
         alignas(T) std::array<std::byte,sizeof(T)> mem;
@@ -19,17 +22,23 @@ namespace cppp{
             void destroy(){
                 (*this)->~T();
             }
-            const T& operator*() const{
-                return *reinterpret_cast<const T*>(mem.data());
-            }
-            T& operator*(){
-                return *reinterpret_cast<T*>(mem.data());
-            }
-            const T* operator->() const{
+            const T* get() const{
                 return reinterpret_cast<const T*>(mem.data());
             }
-            T* operator->(){
+            T* get(){
                 return reinterpret_cast<T*>(mem.data());
+            }
+            const T& operator*() const{
+                return *get();
+            }
+            T& operator*(){
+                return *get();
+            }
+            const T* operator->() const{
+                return get();
+            }
+            T* operator->(){
+                return get();
             }
     };
 }
