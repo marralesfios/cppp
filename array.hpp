@@ -4,7 +4,7 @@
 #include<ranges>
 #include<span>
 namespace cppp{
-    constexpr inline struct value_init_tag_t{} value_init_tag;
+    struct value_init_tag_t{} constexpr inline value_init_tag;
     template<typename T>
     class fixed_array{
         std::span<T> buf;
