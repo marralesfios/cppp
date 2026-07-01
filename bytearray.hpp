@@ -44,6 +44,9 @@ namespace cppp{
             void append(std::byte v){
                 *resb(1uz) = v;
             }
+            void append(std::uint8_t v){
+                append(std::byte{v});
+            }
             template<typename I>
             void appendl(I v){
                 write<I>(resb(sizeof(I)),v);
