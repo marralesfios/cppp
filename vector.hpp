@@ -2,6 +2,7 @@
 #include<utility>
 #include<cstdint>
 #include<array>
+#include<cmath>
 namespace cppp{
     namespace detail{
         template<typename T,std::size_t>
@@ -20,7 +21,7 @@ namespace cppp{
                 std::array<T,size()> m;
             public:
                 constexpr vec() noexcept = default;
-                constexpr vec(T v) noexcept: m{_repeat_for_pack_v<T,indices>(v)...}{}
+                constexpr vec(T v) noexcept : m{_repeat_for_pack_v<T,indices>(v)...}{}
                 constexpr vec(_repeat_for_pack_t<T,indices>... v) noexcept : m{v...}{}
                 template<typename U> requires(std::constructible_from<T,U>)
                 constexpr explicit(!std::convertible_to<U,T>) vec(vec<U,indices...> conv) : vec(static_cast<T>(conv[indices])...){}
@@ -73,9 +74,6 @@ namespace cppp{
                     (..., (m[indices] += other[indices]));
                     return *this;
                 }
-                constexpr vec operator+(this vec lhs,vec rhs) noexcept{
-                    return lhs += rhs;
-                }
                 constexpr vec operator-() const noexcept{
                     return {-m[indices]...};
                 }
@@ -83,27 +81,34 @@ namespace cppp{
                     (..., (m[indices] -= other[indices]));
                     return *this;
                 }
-                constexpr vec operator-(this vec lhs,vec rhs) noexcept{
-                    return lhs -= rhs;
-                }
                 constexpr vec operator*=(vec other) noexcept{
                     (..., (m[indices] *= other[indices]));
                     return *this;
-                }
-                constexpr vec operator*(this vec lhs,vec rhs) noexcept{
-                    return lhs *= rhs;
                 }
                 constexpr vec& operator/=(vec other) noexcept{
                     (..., (m[indices] /= other[indices]));
                     return *this;
                 }
-                constexpr vec operator/(this vec lhs,vec rhs) noexcept{
-                    return lhs /= rhs;
-                }
                 constexpr bool operator==(vec other) const noexcept{
                     return (...&&(m[indices] == other[indices]));
                 }
         };
+        template<typename T,std::size_t ...indices>
+        constexpr vec<T,indices...> operator+(vec<T,indices...> lhs,vec<T,indices...> rhs) noexcept{
+            return lhs += rhs;
+        }
+        template<typename T,std::size_t ...indices>
+        constexpr vec<T,indices...> operator-(vec<T,indices...> lhs,vec<T,indices...> rhs) noexcept{
+            return lhs -= rhs;
+        }
+        template<typename T,std::size_t ...indices>
+        constexpr vec<T,indices...> operator*(vec<T,indices...> lhs,vec<T,indices...> rhs) noexcept{
+            return lhs *= rhs;
+        }
+        template<typename T,std::size_t ...indices>
+        constexpr vec<T,indices...> operator/(vec<T,indices...> lhs,vec<T,indices...> rhs) noexcept{
+            return lhs /= rhs;
+        }
         template<typename T,typename U>
         struct vec_from_int_seq{};
         template<typename T,std::size_t ...n>
@@ -131,6 +136,10 @@ namespace cppp{
     using uvec4 = vec4<std::uint32_t>;
     using ivec4 = vec4<std::int32_t>;
     using svec4 = vec4<std::size_t>;
+    template<typename T,std::size_t ...indices>
+    detail::vec<T,indices...> fmod(detail::vec<T,indices...> lhs,detail::vec<T,indices...> rhs){
+        return {std::fmod(lhs[indices],rhs[indices])...};
+    }
 }
 namespace std{
     template<typename T,std::size_t ...indices>
