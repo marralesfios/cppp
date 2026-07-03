@@ -140,6 +140,14 @@ namespace cppp{
     detail::vec<T,indices...> fmod(detail::vec<T,indices...> lhs,detail::vec<T,indices...> rhs){
         return {std::fmod(lhs[indices],rhs[indices])...};
     }
+    template<typename T,std::size_t ...indices>
+    detail::vec<T,indices...> max(detail::vec<T,indices...> lhs,detail::vec<T,indices...> rhs){
+        return {std::max(lhs[indices],rhs[indices])...};
+    }
+    template<typename T,std::size_t ...indices>
+    detail::vec<T,indices...> min(detail::vec<T,indices...> lhs,detail::vec<T,indices...> rhs){
+        return {std::min(lhs[indices],rhs[indices])...};
+    }
 }
 namespace std{
     template<typename T,std::size_t ...indices>
