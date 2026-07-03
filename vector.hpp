@@ -5,6 +5,15 @@
 #include<array>
 #include<cmath>
 namespace cppp{
+    /*
+    Structured Bindings can't actually introduce a Pack
+    
+    as of the time of writing, P1061 causes an ICE in GCC:
+    https://gcc.gnu.org/bugzilla/show_bug.cgi?id=123970
+    
+    We'll stick to the old lambda trick for now.
+    */
+    #define CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(cap,name,bound,...) [cap]<std::size_t ...name>(std::index_sequence<name...>){return __VA_ARGS__;}(std::make_index_sequence<bound>{})
     namespace detail{
         template<typename T,std::size_t>
         using _repeat_for_pack_t = T;
@@ -79,16 +88,13 @@ namespace cppp{
                 return base_t::m[3uz];
             }
             constexpr vec xproj() const noexcept requires(n>1){
-                constexpr auto [...indices] = indices_t{};
-                return vec((indices == 0uz ? x() : T())...);
+                return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(this,indices,n,vec((indices == 0uz ? x() : T())...));
             }
             constexpr vec yproj() const noexcept requires(n>1){
-                constexpr auto [...indices] = indices_t{};
-                return vec((indices == 1uz ? y() : T())...);
+                return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(this,indices,n,vec((indices == 1uz ? y() : T())...));
             }
             constexpr vec zproj() const noexcept requires(n>2){
-                constexpr auto [...indices] = indices_t{};
-                return vec((indices == 2uz ? z() : T())...);
+                return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(this,indices,n,vec((indices == 2uz ? z() : T())...));
             }
             constexpr vec& operator+=(vec other) noexcept{
                 template for(constexpr std::size_t index : std::views::indices(n)){
@@ -97,8 +103,7 @@ namespace cppp{
                 return *this;
             }
             constexpr vec operator-() const noexcept{
-                constexpr auto [...indices] = indices_t{};
-                return {-base_t::m[indices]...};
+                return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(this,indices,n,vec{-base_t::m[indices]...});
             }
             constexpr vec& operator-=(vec other) noexcept{
                 template for(constexpr std::size_t index : std::views::indices(n)){
@@ -133,8 +138,7 @@ namespace cppp{
         }
     }
     CPPP_GENERATE_VECTOR_OVERLOADS_WITH_RET(bool,operator==,{
-        constexpr auto [...indices] = std::make_index_sequence<n>{};
-        return (...&&(index_vec(lhs,indices) == index_vec(rhs,indices)));
+        return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(=,indices,n,(...&&(index_vec(lhs,indices) == index_vec(rhs,indices))));
     })
     CPPP_GENERATE_VECTOR_OVERLOADS(operator+,{
         return vec<T,n>(lhs) += rhs;
@@ -167,20 +171,18 @@ namespace cppp{
     using ivec4 = vec4<std::int32_t>;
     using svec4 = vec4<std::size_t>;
     CPPP_GENERATE_VECTOR_OVERLOADS(fmod,{
-        constexpr auto [...indices] = std::make_index_sequence<n>{};
-        return {std::fmod(detail::index_vec(lhs,indices),detail::index_vec(rhs,indices))...};
+        return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(=,indices,n,vec<T,n>{std::fmod(detail::index_vec(lhs,indices),detail::index_vec(rhs,indices))...});
     })
     CPPP_GENERATE_VECTOR_OVERLOADS(max,{
-        constexpr auto [...indices] = std::make_index_sequence<n>{};
-        return {std::max(detail::index_vec(lhs,indices),detail::index_vec(rhs,indices))...};
+        return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(=,indices,n,vec<T,n>{std::max(detail::index_vec(lhs,indices),detail::index_vec(rhs,indices))...});
     })
     CPPP_GENERATE_VECTOR_OVERLOADS(min,{
-        constexpr auto [...indices] = std::make_index_sequence<n>{};
-        return {std::min(detail::index_vec(lhs,indices),detail::index_vec(rhs,indices))...};
+        return CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(=,indices,n,vec<T,n>{std::min(detail::index_vec(lhs,indices),detail::index_vec(rhs,indices))...});
     })
     #undef CPPP_GENERATE_VECTOR_OVERLOADS
     #undef CPPP_COMMA
     #undef CPPP_GENERATE_VECTOR_OVERLOADS_WITH_RET
+    #undef CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR
 }
 namespace std{
     template<typename T,std::size_t n>
