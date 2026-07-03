@@ -106,7 +106,7 @@ namespace cppp{
                 }
                 return *this;
             }
-            constexpr vec operator*=(vec other) noexcept{
+            constexpr vec& operator*=(vec other) noexcept{
                 template for(constexpr std::size_t index : std::views::indices(n)){
                     base_t::m[index] *= other[index];
                 }
