@@ -31,7 +31,7 @@
 #define CPPP_PARSE_THIS(...) CPPP_PARSE_THIS_1024(__VA_ARGS__)
 #define CPPP_PARSE_THIS_MAX(...) CPPP_PARSE_THIS_33554432(__VA_ARGS__)
 
-#define CPPP___name_FOR_EACH() CPPP__FOR_EACH
-#define CPPP__FOR_EACH(fn,u,...) fn(u) __VA_OPT__(,CPPP_APPEND_SPACE(CPPP___name_FOR_EACH)()(fn,__VA_ARGS__))
-#define CPPP_FOR_EACH(fn,...) CPPP_PARSE_THIS(CPPP__FOR_EACH(fn,__VA_ARGS__))
-#define CPPP_FOR_EACH_MAX(fn,...) CPPP_PARSE_THIS_MAX(CPPP__FOR_EACH(fn,__VA_ARGS__))
+#define CPPP_name_FOR_EACH_() CPPP_FOR_EACH_
+#define CPPP_FOR_EACH_(fn,u,...) fn(u) __VA_OPT__(,CPPP_APPEND_SPACE(CPPP_name_FOR_EACH_)()(fn,__VA_ARGS__))
+#define CPPP_FOR_EACH(fn,...) CPPP_PARSE_THIS(CPPP_FOR_EACH_(fn,__VA_ARGS__))
+#define CPPP_FOR_EACH_MAX(fn,...) CPPP_PARSE_THIS_MAX(CPPP_FOR_EACH_(fn,__VA_ARGS__))
