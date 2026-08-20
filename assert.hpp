@@ -31,12 +31,12 @@ namespace cppp{
     }
 }
 #else
-#define CPPP_ASSERT(...) ::cppp::assert_true((__VA_ARGS__),::cppp::detail::view_u8array(u8 ## #__VA_ARGS__))
+#define CPPP_ASSERT(...) ::cppp::assert_true(!!(__VA_ARGS__),::cppp::detail::view_u8array(u8 ## #__VA_ARGS__))
 
 namespace cppp{
     [[noreturn]] constexpr inline void unreachable(std::source_location where=std::source_location::current()) noexcept{
         using namespace std::literals;
-        std::cerr << "Unreachable executed in function "sv << where.function_name() << "at "sv << where.file_name() << ':' << where.line() << ':' << where.column() << '\n';
+        std::cerr << "Unreachable executed in function "sv << where.function_name() << " at "sv << where.file_name() << ':' << where.line() << ':' << where.column() << '\n';
         std::abort();
     }
 }
