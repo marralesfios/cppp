@@ -1,23 +1,17 @@
 #pragma once
 #include<type_traits>
 #include<utility>
+#include<ranges>
 namespace cppp{
-    namespace detail{
-        constexpr inline void shl() noexcept{}
-        template<typename T,typename U>
-        constexpr void shl(T& x,U&& y){
-            x = std::forward<U>(y);
-        }
-        template<typename T,typename U,typename ...Etc> requires(sizeof...(Etc)>0uz)
-        constexpr void shl(T& x,U& y,Etc&& ...etc) noexcept(noexcept(x = std::move(y)) && noexcept(shl(y,std::forward<Etc>(etc)...))){
-            x = std::move(y);
-            shl(y,std::forward<Etc>(etc)...);
-        }
-    }
-    template<typename First,typename ...Rest>
-    constexpr First shl(First& first,Rest&& ...rest) noexcept(std::is_nothrow_move_constructible_v<First> && noexcept(detail::shl(first,std::forward<Rest>(rest)...))){
+    template<typename First,typename ...T>
+    constexpr First shl(First&& first,T&& ...items){
         First old_value{std::move(first)};
-        detail::shl(first,std::forward<Rest>(rest)...);
+        if constexpr(sizeof...(T)){
+            old_value = std::move(items...[0uz]);
+            template for(constexpr std::size_t i : std::views::indices(sizeof...(T)-1uz)){
+                items...[i] = std::move(items...[i+1uz]);
+            }
+        }
         return old_value;
     }
 }
