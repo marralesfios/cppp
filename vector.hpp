@@ -192,6 +192,14 @@ namespace cppp{
     using vec3 = vec<T,3uz>;
     template<typename T>
     using vec4 = vec<T,4uz>;
+    template<std::size_t n>
+    using fvec = vec<float,n>;
+    template<std::size_t n>
+    using uvec = vec<std::uint32_t,n>;
+    template<std::size_t n>
+    using ivec = vec<std::int32_t,n>;
+    template<std::size_t n>
+    using svec = vec<std::size_t,n>;
     using fvec2 = vec2<float>;
     using uvec2 = vec2<std::uint32_t>;
     using ivec2 = vec2<std::int32_t>;
