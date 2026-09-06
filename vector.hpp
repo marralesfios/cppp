@@ -1,4 +1,5 @@
 #pragma once
+#include<algorithm>
 #include<utility>
 #include<cstdint>
 #include<ranges>
@@ -14,6 +15,9 @@ namespace cppp{
     We'll stick to the old lambda trick for now.
     */
     #define CPPP_INTRODUCE_INDEX_SEQUENCE_TO_EXPR(cap,name,bound,...) [cap]<std::size_t ...name>(std::index_sequence<name...>){return __VA_ARGS__;}(std::make_index_sequence<bound>{})
+    
+    template<typename T,std::size_t n>
+    class vec;
     namespace detail{
         template<typename T,std::size_t>
         using _repeat_for_pack_t = T;
@@ -32,22 +36,44 @@ namespace cppp{
             public:
                 constexpr vec_base() noexcept = default;
                 constexpr vec_base(T v) noexcept : m{_repeat_for_pack_v<T,indices>(v)...}{}
-                constexpr vec_base(_repeat_for_pack_t<T,indices>... v) noexcept : m{v...}{}
+                constexpr vec_base(_repeat_for_pack_t<T,indices>... v) noexcept requires(sizeof...(indices) > 0uz) : m{v...}{}
+        };
+        template<typename T,std::size_t n,std::size_t i>
+        struct vec_base_init_from{
+            constexpr vec_base_init_from() noexcept = default;
+            constexpr vec_base_init_from(vec<T,i> lhs,vec<T,n-i> rhs) noexcept{
+                std::array<T,n>& arr = static_cast<vec<T,n>*>(this)->underlying_array();
+                std::ranges::copy(lhs.underlying_array(),arr.begin());
+                std::ranges::copy(rhs.underlying_array(),arr.begin() + i);
+            }
+        };
+        template<typename T,std::size_t n,typename U>
+        struct vec_base_init_from_sequ{};
+        template<typename T,std::size_t n,std::size_t ...i>
+        struct vec_base_init_from_sequ<T,n,std::index_sequence<0uz,i...>> : vec_base_init_from<T,n,i>...{
+            using vec_base_init_from<T,n,i>::vec_base_init_from...;
         };
     }
     template<typename T,std::size_t n>
-    class vec : detail::vec_base<T,std::make_index_sequence<n>>{
+    class vec : detail::vec_base<T,std::make_index_sequence<n>>, detail::vec_base_init_from_sequ<T,n,std::make_index_sequence<n>>{
         using indices_t = std::make_index_sequence<n>;
         using base_t = detail::vec_base<T,indices_t>;
-        constexpr std::array<T,n> underlying_array() const noexcept{
+        constexpr const std::array<T,n>& underlying_array() const noexcept{
+            return base_t::m;
+        }
+        constexpr std::array<T,n>& underlying_array() noexcept{
             return base_t::m;
         }
         template<typename U,std::size_t m>
         friend class vec;
+        template<typename U,std::size_t i>
+        friend struct detail::vec_base_init_from;
         public:
-            consteval static std::size_t size(){
+            using value_type = T;
+            consteval static std::size_t size() noexcept{
                 return n;
             }
+            using detail::vec_base_init_from_sequ<T,n,std::make_index_sequence<n>>::vec_base_init_from_sequ;
             using base_t::vec_base;
             template<typename U> requires(std::constructible_from<T,U>)
             constexpr explicit(!std::convertible_to<U,T>) vec(vec<U,n> conv) noexcept : base_t(conv.underlying_array()){}
