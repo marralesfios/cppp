@@ -156,7 +156,7 @@ namespace cppp{
     vec(vec<T,u>,T) -> vec<T,u+1uz>;
     template<typename T,std::size_t u>
     vec(T,vec<T,u>) -> vec<T,u+1uz>;
-    template<typename ...T> requires(... && std::same_as<T...[0uz],T>)
+    template<typename ...T> requires(sizeof...(T) != 0 && (... && std::same_as<T...[0uz],T>))
     vec(T...) -> vec<T...[0uz],sizeof...(T)>;
     #define CPPP_GENERATE_VECTOR_OVERLOADS_WITH_RET(ret,name,...) template<typename T,std::size_t n> constexpr ret name (vec<T,n> lhs,vec<T,n> rhs) noexcept __VA_ARGS__  template<typename T,std::size_t n> constexpr ret name (T lhs,vec<T,n> rhs) noexcept __VA_ARGS__  template<typename T,std::size_t n> constexpr ret name (vec<T,n> lhs,T rhs) noexcept __VA_ARGS__
     #define CPPP_COMMA ,
