@@ -12,7 +12,7 @@ namespace cppp{
     constexpr inline void assert_true(bool value,std::u8string_view text,std::source_location where=std::source_location::current()){
         if(!value){
             using namespace std::literals;
-            std::cerr << "Assertion '"sv << cview(text) << "' failed in function "sv << where.function_name() << "at "sv << where.file_name() << ':' << where.line() << ':' << where.column() << '\n';
+            std::cerr << "Assertion '"sv << cview(text) << "' failed in function "sv << where.function_name() << " at "sv << where.file_name() << ':' << where.line() << ':' << where.column() << '\n';
             std::abort();
         }
     }
