@@ -81,7 +81,7 @@ namespace cppp{
                 std::size_t n = num;
                 template for(constexpr std::meta::info alt : {^^Tv...}){
                     if(!(n--)){
-                        return std::forward<Fn>(fn)(*get<typename[:alt:]>());
+                        return std::forward<Fn>(fn)(get<typename[:alt:]>());
                     }
                 }
                 unreachable();
