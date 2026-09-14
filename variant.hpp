@@ -27,14 +27,18 @@ namespace cppp{
                 std::vector<std::meta::info> annots{annotations_of(etor)};
                 if(annots.empty()) return ^^void;
                 if(annots.size() == 1uz && type_of(annots.front()) == dealias(^^std::meta::info) && is_type(extract<std::meta::info>(annots.front()))){
-                    std::meta::info type = extract<std::meta::info>(annots.front());
-                    if(is_lvalue_reference_type(type) || is_rvalue_reference_type(type)){
-                        throw std::meta::exception(u8"cppp::variant: enumerator type must not be a reference type"sv,etor);
-                    }
-                    if(is_function_type(type)){
-                        throw std::meta::exception(u8"cppp::variant: enumerator type must not be a function"sv,etor);
-                    }
-                    return type;
+                    // GCC, you should know better than to complain that NRVO is not done on a std::meta::info instance...
+                    // I know we can just copy it manually, but let's do the Right Thing and follow https://marralesfios.github.io/blog/nrvo
+                    return [&annots,etor]consteval{
+                        std::meta::info type = extract<std::meta::info>(annots.front());
+                        if(is_lvalue_reference_type(type) || is_rvalue_reference_type(type)){
+                            throw std::meta::exception(u8"cppp::variant: enumerator type must not be a reference type"sv,etor);
+                        }
+                        if(is_function_type(type)){
+                            throw std::meta::exception(u8"cppp::variant: enumerator type must not be a function"sv,etor);
+                        }
+                        return type;
+                    }();
                 }else throw std::meta::exception(u8"cppp::variant: enumerator does not have an unambiguous type annotation"sv,etor);
             }
         }
@@ -51,7 +55,7 @@ namespace cppp{
             E v;
             std::meta::info t;
         };
-        template<typename E,std::size_t s,std::size_t a,etor_info<E> ...etor_infos>
+        template<typename E,etor_info<E> ...etor_infos>
         class enum_info_base{
             public:
                 constexpr static std::array<etor_info<E>,sizeof...(etor_infos)> infos{etor_infos...};
@@ -71,35 +75,49 @@ namespace cppp{
                 using lookup = [:infos[member_lookup<v>].t:];
                 template<E v>
                 constexpr static std::meta::info lookup_member = infos[member_lookup<v>].mem;
-                constexpr static std::size_t size = s;
-                constexpr static std::size_t alignment = a;
-                constexpr static bool is_nothrow_copy_constructible = []constexpr static{
+                consteval static bool is_nothrow_copy_constructible(){
                     for(const detail::etor_info<E>& ei : infos){
                         if(!is_nothrow_copy_constructible_type(ei.t)) return false;
                     }
                     return true;
-                }();
-                constexpr static bool is_nothrow_move_constructible = []constexpr static{
+                }
+                consteval static bool is_nothrow_move_constructible(){
                     for(const detail::etor_info<E>& ei : infos){
                         if(!is_nothrow_move_constructible_type(ei.t)) return false;
                     }
                     return true;
-                }();
-                constexpr static bool is_nothrow_copy_assignable = is_nothrow_copy_constructible && []constexpr static{
+                }
+                consteval static bool is_nothrow_copy_assignable(){
+                    if(!is_nothrow_copy_constructible()) return false;
                     for(const detail::etor_info<E>& ei : infos){
                         if(!is_nothrow_copy_assignable_type(ei.t)) return false;
                     }
                     return true;
-                }();
-                constexpr static bool is_nothrow_move_assignable = is_nothrow_move_constructible && []constexpr static{
+                }
+                consteval static bool is_nothrow_move_assignable(){
+                    if(!is_nothrow_move_constructible()) return false;
                     for(const detail::etor_info<E>& ei : infos){
                         if(!is_nothrow_move_assignable_type(ei.t)) return false;
                     }
                     return true;
-                }();
+                }
+        };
+        template<typename E,std::size_t s,std::size_t a,etor_info<E> ...etor_infos>
+        class inplace_enum_info_base : enum_info_base<E,etor_infos...>{
+                constexpr static std::size_t size = s;
+                constexpr static std::size_t alignment = a;
         };
         template<enumeration E>
         using enum_info = [:[]consteval static{
+            std::vector<std::meta::info> etor_infos{^^E};
+            for(std::meta::info etor : enumerators_of(^^E)){
+                std::meta::info t = etor_type(etor);
+                etor_infos.emplace_back(std::meta::reflect_constant(etor_info<E>{.v=extract<E>(etor),.t=t}));
+            }
+            return substitute(^^enum_info_base,etor_infos);
+        }():];
+        template<enumeration E>
+        using inplace_enum_info = [:[]consteval static{
             std::vector<std::meta::info> etor_infos;
             std::size_t size = 0uz;
             std::size_t alignment = 1uz;
@@ -111,7 +129,7 @@ namespace cppp{
                     alignment = std::max(alignment,alignment_of(t));
                 }
             }
-            return substitute(^^enum_info_base,std::views::concat(rtl<std::initializer_list<std::meta::info>>({^^E,std::meta::reflect_constant(size),std::meta::reflect_constant(alignment)}),etor_infos));
+            return substitute(^^inplace_enum_info_base,std::views::concat(rtl<std::initializer_list<std::meta::info>>({^^E,std::meta::reflect_constant(size),std::meta::reflect_constant(alignment)}),etor_infos));
         }():];
         struct inplace_destroy{
             constexpr static void operator()() noexcept{}
@@ -135,7 +153,7 @@ namespace cppp{
         // At least before P4101, etor_info<E> being a consteval-only type makes accessing infos[...].v promote the entire containing function to consteval. This is unacceptable.
         template<E v>
         constexpr static E access_constexpr_etor = v;
-        using info_t = detail::enum_info<E>;
+        using info_t = detail::inplace_enum_info<E>;
         [[no_unique_address]] potentially_empty_array<unsigned char,info_t::size,info_t::alignment> data;
         E _tag;
         template<typename T>
@@ -302,7 +320,7 @@ namespace cppp{
                 return nullptr;
             }
             template<typename T>
-            constexpr static void* operator()(T& v) noexcept(std::is_nothrow_copy_constructible_v<T>){
+            constexpr static void* operator()(const T& v) noexcept(std::is_nothrow_copy_constructible_v<T>){
                 return new T(v);
             }
         };
@@ -349,14 +367,14 @@ namespace cppp{
         public:
             template<E v>
             using lookup = info_t::template lookup<v>;
-            constexpr heap_variant() noexcept requires(is_optional) : _tag(access_constexpr_etor<info_t::infos[0uz].v>){}
+            constexpr heap_variant() noexcept requires(is_optional) : data(nullptr), _tag(access_constexpr_etor<info_t::infos[0uz].v>){}
             template<E val,typename ...A> requires(!std::is_void_v<lookup<val>>)
             constexpr heap_variant(in_place_etor_t<val>,A&& ...a) : data(new lookup<val>(std::forward<A>(a)...)), _tag(val){}
             template<E val> requires(std::is_void_v<lookup<val>>)
-            constexpr heap_variant(in_place_etor_t<val>) noexcept : _tag(val){}
-            constexpr heap_variant(const heap_variant& other) noexcept(info_t::is_nothrow_copy_constructible) : data(other.visit(detail::heap_copy())), _tag(other._tag){}
-            constexpr heap_variant(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible) : data(other.visit(detail::heap_move())), _tag(other._tag){}
-            constexpr heap_variant& operator=(const heap_variant& other) noexcept(info_t::is_nothrow_copy_assignable){
+            constexpr heap_variant(in_place_etor_t<val>) noexcept : data(nullptr), _tag(val){}
+            constexpr heap_variant(const heap_variant& other) noexcept(info_t::is_nothrow_copy_constructible()) : data(other.visit(detail::heap_copy())), _tag(other._tag){}
+            constexpr heap_variant(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible()) : data(other.visit(detail::heap_move())), _tag(other._tag){}
+            constexpr heap_variant& operator=(const heap_variant& other) noexcept(info_t::is_nothrow_copy_assignable()){
                 if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                         if(ei.v == _tag){
@@ -373,7 +391,7 @@ namespace cppp{
                 }
                 return *this;
             }
-            constexpr heap_variant& operator=(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible){
+            constexpr heap_variant& operator=(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible()){
                 if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                         if(ei.v == _tag){
