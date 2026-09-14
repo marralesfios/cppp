@@ -8,6 +8,7 @@
 #include<meta>
 #include<new>
 #include"assert.hpp"
+#include"trap.hpp"
 #include"eto.hpp"
 #include"rtl.hpp"
 namespace cppp{
@@ -72,6 +73,30 @@ namespace cppp{
                 constexpr static std::meta::info lookup_member = infos[member_lookup<v>].mem;
                 constexpr static std::size_t size = s;
                 constexpr static std::size_t alignment = a;
+                constexpr static bool is_nothrow_copy_constructible = []constexpr static{
+                    for(const detail::etor_info<E>& ei : infos){
+                        if(!is_nothrow_copy_constructible_type(ei.t)) return false;
+                    }
+                    return true;
+                }();
+                constexpr static bool is_nothrow_move_constructible = []constexpr static{
+                    for(const detail::etor_info<E>& ei : infos){
+                        if(!is_nothrow_move_constructible_type(ei.t)) return false;
+                    }
+                    return true;
+                }();
+                constexpr static bool is_nothrow_copy_assignable = is_nothrow_copy_constructible && []constexpr static{
+                    for(const detail::etor_info<E>& ei : infos){
+                        if(!is_nothrow_copy_assignable_type(ei.t)) return false;
+                    }
+                    return true;
+                }();
+                constexpr static bool is_nothrow_move_assignable = is_nothrow_move_constructible && []constexpr static{
+                    for(const detail::etor_info<E>& ei : infos){
+                        if(!is_nothrow_move_assignable_type(ei.t)) return false;
+                    }
+                    return true;
+                }();
         };
         template<enumeration E>
         using enum_info = [:[]consteval static{
@@ -88,7 +113,7 @@ namespace cppp{
             }
             return substitute(^^enum_info_base,std::views::concat(rtl<std::initializer_list<std::meta::info>>({^^E,std::meta::reflect_constant(size),std::meta::reflect_constant(alignment)}),etor_infos));
         }():];
-        struct destroy_variant{
+        struct inplace_destroy{
             constexpr static void operator()() noexcept{}
             template<typename T>
             constexpr static void operator()(T& v) noexcept(std::is_nothrow_destructible_v<T>){
@@ -119,39 +144,15 @@ namespace cppp{
         }
         template<typename T>
         const T& _get() const noexcept{
-            return *std::launder(reinterpret_cast<T*>(data.data()));
+            return *std::launder(reinterpret_cast<const T*>(data.data()));
         }
         void _destroy() noexcept{
-            visit(detail::destroy_variant());
+            visit(detail::inplace_destroy());
         }
-        constexpr static bool is_nothrow_copyable = []constexpr static{
-            for(const detail::etor_info<E>& ei : info_t::infos){
-                if(!is_nothrow_copy_constructible_type(ei.t)) return false;
-            }
-            return true;
-        }();
-        constexpr static bool is_nothrow_moveable = []constexpr static{
-            for(const detail::etor_info<E>& ei : info_t::infos){
-                if(!is_nothrow_move_constructible_type(ei.t)) return false;
-            }
-            return true;
-        }();
         constexpr static bool is_optional = is_void_type(info_t::infos[0uz].t);
-        constexpr static bool is_nothrow_copy_assignable = []constexpr static{
-            if(!is_optional) return true; // we'll std::terminate on failure
-            for(const detail::etor_info<E>& ei : info_t::infos){
-                if(!is_nothrow_copy_assignable_type(ei.t)) return false;
-            }
-            return true;
-        }();
-        constexpr static bool is_nothrow_move_assignable = []constexpr static{
-            if(!is_optional) return true; // we'll std::terminate on failure
-            for(const detail::etor_info<E>& ei : info_t::infos){
-                if(!is_nothrow_move_assignable_type(ei.t)) return false;
-            }
-            return true;
-        }();
-        void data_emplace_from(const variant& other) noexcept(is_nothrow_copyable){
+        constexpr static bool is_nothrow_copy_assignable = !is_optional || info_t::is_nothrow_copy_assignable;
+        constexpr static bool is_nothrow_move_assignable = !is_optional || info_t::is_nothrow_move_assignable;
+        void data_emplace_from(const variant& other) noexcept(info_t::is_nothrow_copy_constructible){
             template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                 if constexpr(!is_void_type(ei.t)){
                     if(ei.v == other.tag){
@@ -160,7 +161,7 @@ namespace cppp{
                 }
             }
         }
-        void data_emplace_from(variant&& other) noexcept(is_nothrow_moveable){
+        void data_emplace_from(variant&& other) noexcept(info_t::is_nothrow_move_constructible){
             template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                 if constexpr(!is_void_type(ei.t)){
                     if(ei.v == other.tag){
@@ -179,10 +180,10 @@ namespace cppp{
             }
             template<E val> requires(std::is_void_v<lookup<val>>)
             variant(in_place_etor_t<val>) noexcept : tag(val){}
-            variant(const variant& other) noexcept(is_nothrow_copyable) : tag(other.tag){
+            variant(const variant& other) noexcept(info_t::is_nothrow_copy_constructible) : tag(other.tag){
                 data_emplace_from(other);
             }
-            variant(variant&& other) noexcept(is_nothrow_moveable) : tag(other.tag){
+            variant(variant&& other) noexcept(info_t::is_nothrow_move_constructible) : tag(other.tag){
                 data_emplace_from(std::move(other));
             }
             variant& operator=(const variant& other) noexcept(is_nothrow_copy_assignable){
@@ -292,6 +293,170 @@ namespace cppp{
                 unreachable();
             }
             ~variant(){
+                _destroy();
+            }
+    };
+    namespace detail{
+        struct heap_copy{
+            constexpr static void* operator()() noexcept{
+                return nullptr;
+            }
+            template<typename T>
+            constexpr static void* operator()(T& v) noexcept(std::is_nothrow_copy_constructible_v<T>){
+                return new T(v);
+            }
+        };
+        struct heap_move{
+            constexpr static void* operator()() noexcept{
+                return nullptr;
+            }
+            template<typename T>
+            constexpr static void* operator()(T& v) noexcept(std::is_nothrow_move_constructible_v<T>){
+                return new T(std::move(v));
+            }
+        };
+        struct heap_destroy{
+            constexpr static void operator()() noexcept{}
+            template<typename T>
+            constexpr static void operator()(T& v) noexcept(std::is_nothrow_destructible_v<T>){
+                delete &v;
+            }
+        };
+    }
+    template<detail::enumeration E>
+    class heap_variant{
+        #if __cpp_consteval >= 202406L
+        #warning P4101 might be merged! Check to see if access_constexpr_etor is still necessary.
+        #endif
+        // At least before P4101, etor_info<E> being a consteval-only type makes accessing infos[...].v promote the entire containing function to consteval. This is unacceptable.
+        template<E v>
+        constexpr static E access_constexpr_etor = v;
+        using info_t = detail::enum_info<E>;
+        void* data;
+        E tag;
+        template<typename T>
+        constexpr T& _get() noexcept{
+            return *static_cast<T*>(data);
+        }
+        template<typename T>
+        constexpr const T& _get() const noexcept{
+            return *static_cast<const T*>(data);
+        }
+        constexpr void _destroy() noexcept{
+            visit(detail::heap_destroy());
+        }
+        constexpr static bool is_optional = is_void_type(info_t::infos[0uz].t);
+        public:
+            template<E v>
+            using lookup = info_t::template lookup<v>;
+            constexpr heap_variant() noexcept requires(is_optional) : tag(access_constexpr_etor<info_t::infos[0uz].v>){}
+            template<E val,typename ...A> requires(!std::is_void_v<lookup<val>>)
+            constexpr heap_variant(in_place_etor_t<val>,A&& ...a) : data(new lookup<val>(std::forward<A>(a)...)), tag(val){}
+            template<E val> requires(std::is_void_v<lookup<val>>)
+            constexpr heap_variant(in_place_etor_t<val>) noexcept : tag(val){}
+            constexpr heap_variant(const heap_variant& other) noexcept(info_t::is_nothrow_copy_constructible) : data(other.visit(detail::heap_copy())), tag(other.tag){}
+            constexpr heap_variant(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible) : data(other.visit(detail::heap_move())), tag(other.tag){}
+            constexpr heap_variant& operator=(const heap_variant& other) noexcept(info_t::is_nothrow_copy_assignable){
+                if(tag == other.tag){
+                    template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
+                        if(ei.v == tag){
+                            if constexpr(!is_void_type(ei.t)){
+                                _get<typename[:ei.t:]>() = other._get<typename[:ei.t:]>();
+                            }
+                        }
+                    }
+                }else{
+                    void* p = other.visit(detail::heap_copy());
+                    _destroy();
+                    data = p;
+                    tag = other.tag;
+                }
+                return *this;
+            }
+            constexpr heap_variant& operator=(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible){
+                if(tag == other.tag){
+                    template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
+                        if(ei.v == tag){
+                            if constexpr(!is_void_type(ei.t)){
+                                _get<typename[:ei.t:]>() = std::move(other._get<typename[:ei.t:]>());
+                            }
+                        }
+                    }
+                }else{
+                    void* p = other.visit(detail::heap_move());
+                    _destroy();
+                    data = p;
+                    tag = other.tag;
+                }
+                return *this;
+            }
+            constexpr explicit operator bool() requires(is_optional){
+                return tag != access_constexpr_etor<info_t::infos[0uz].v>;
+            }
+            constexpr E index() const noexcept{
+                return tag;
+            }
+            template<E val,typename ...A>
+            constexpr lookup<val>& emplace(A&& ...a) noexcept(noexcept(new lookup<val>(std::forward<A>(a)...))){
+                _destroy();
+                tag = val;
+                lookup<val>* p = new lookup<val>(std::forward<A>(a)...);
+                data = p;
+                return *p;
+            }
+            template<E val>
+            constexpr void emplace() noexcept requires(std::is_void_v<lookup<val>>){
+                _destroy();
+                tag = val;
+            }
+            template<E val>
+            constexpr const lookup<val>& get() const noexcept{
+                if consteval{
+                    cppp::consteval_assert(tag == val);
+                }else{
+                    CPPP_ASSERT(tag == val);
+                }
+                return _get<lookup<val>>();
+            }
+            template<E val>
+            constexpr lookup<val>& get() noexcept{
+                if consteval{
+                    cppp::consteval_assert(tag == val);
+                }else{
+                    CPPP_ASSERT(tag == val);
+                }
+                return _get<lookup<val>>();
+            }
+            constexpr bool has(E val) const noexcept{
+                return tag == val;
+            }
+            template<typename Fn>
+            constexpr decltype(auto) visit(Fn&& fn){
+                template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
+                    if(ei.v == tag){
+                        if constexpr(is_void_type(ei.t)){
+                            return std::forward<Fn>(fn)();
+                        }else{
+                            return std::forward<Fn>(fn)(_get<typename[:ei.t:]>());
+                        }
+                    }
+                }
+                unreachable();
+            }
+            template<typename Fn>
+            constexpr decltype(auto) visit(Fn&& fn) const{
+                template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
+                    if(ei.v == tag){
+                        if constexpr(is_void_type(ei.t)){
+                            return std::forward<Fn>(fn)();
+                        }else{
+                            return std::forward<Fn>(fn)(_get<typename[:ei.t:]>());
+                        }
+                    }
+                }
+                unreachable();
+            }
+            constexpr ~heap_variant(){
                 _destroy();
             }
     };
