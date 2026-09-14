@@ -5,13 +5,77 @@
 #include<vector>
 #include<string>
 #include<cmath>
+#ifndef __INTELLISENSE__
 #include<meta>
+#endif
 #include<new>
 #include"launder.hpp"
 #include"assert.hpp"
 #include"trap.hpp"
 #include"eto.hpp"
 #include"rtl.hpp"
+#ifdef __INTELLISENSE__
+namespace cppp{
+    namespace detail{
+        template<typename T>
+        concept enumeration = std::is_enum_v<T>;
+    }
+    template<detail::enumeration auto v>
+    struct in_place_etor_t{};
+    template<detail::enumeration auto v>
+    constexpr inline in_place_etor_t<v> in_place_etor;
+    template<detail::enumeration E>
+    class variant{
+        public:
+            variant() noexcept;
+            template<E val,typename ...A>
+            variant(in_place_etor_t<val>,A&& ...a);
+            variant(const variant& other);
+            variant(variant&& other);
+            variant& operator=(const variant& other);
+            variant& operator=(variant&& other);
+            explicit operator bool();
+            E tag() const noexcept;
+            template<E val,typename ...A>
+            __error_type emplace(A&& ...a);
+            template<E val>
+            const __error_type& get() const noexcept;
+            template<E val>
+            __error_type& get() noexcept;
+            bool has(E val) const noexcept;
+            template<typename Fn>
+            __error_type visit(Fn&& fn);
+            template<typename Fn>
+            __error_type visit(Fn&& fn) const;
+            ~variant();
+    };
+    template<detail::enumeration E>
+    class heap_variant{
+        public:
+            constexpr heap_variant() noexcept;
+            template<E val,typename ...A>
+            constexpr heap_variant(in_place_etor_t<val>,A&& ...a);
+            constexpr heap_variant(const heap_variant& other);
+            constexpr heap_variant(heap_variant&& other);
+            constexpr heap_variant& operator=(const heap_variant& other);
+            constexpr heap_variant& operator=(heap_variant&& other);
+            constexpr explicit operator bool();
+            constexpr E tag() const noexcept;
+            template<E val,typename ...A>
+            constexpr __error_type emplace(A&& ...a);
+            template<E val>
+            constexpr const __error_type& get() const noexcept;
+            template<E val>
+            constexpr __error_type& get() noexcept;
+            constexpr bool has(E val) const noexcept;
+            template<typename Fn>
+            constexpr __error_type visit(Fn&& fn);
+            template<typename Fn>
+            constexpr __error_type visit(Fn&& fn) const;
+            constexpr ~heap_variant();
+    };
+}
+#else
 namespace cppp{
     namespace detail{
         template<typename T>
@@ -524,3 +588,4 @@ namespace cppp{
             }
     };
 }
+#endif
