@@ -137,7 +137,7 @@ namespace cppp{
         constexpr static E access_constexpr_etor = v;
         using info_t = detail::enum_info<E>;
         [[no_unique_address]] potentially_empty_array<unsigned char,info_t::size,info_t::alignment> data;
-        E tag;
+        E _tag;
         template<typename T>
         T& _get() noexcept{
             return *std::launder(reinterpret_cast<T*>(data.data()));
@@ -155,7 +155,7 @@ namespace cppp{
         void data_emplace_from(const variant& other) noexcept(info_t::is_nothrow_copy_constructible){
             template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                 if constexpr(!is_void_type(ei.t)){
-                    if(ei.v == other.tag){
+                    if(ei.v == other._tag){
                         new(data.data())[:ei.t:](other._get<typename[:ei.t:]>());
                     }
                 }
@@ -164,7 +164,7 @@ namespace cppp{
         void data_emplace_from(variant&& other) noexcept(info_t::is_nothrow_move_constructible){
             template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                 if constexpr(!is_void_type(ei.t)){
-                    if(ei.v == other.tag){
+                    if(ei.v == other._tag){
                         new(data.data())[:ei.t:](std::move(other._get<typename[:ei.t:]>()));
                     }
                 }
@@ -173,24 +173,24 @@ namespace cppp{
         public:
             template<E v>
             using lookup = info_t::template lookup<v>;
-            variant() noexcept requires(is_optional) : tag(access_constexpr_etor<info_t::infos[0uz].v>){}
+            variant() noexcept requires(is_optional) : _tag(access_constexpr_etor<info_t::infos[0uz].v>){}
             template<E val,typename ...A> requires(!std::is_void_v<lookup<val>>)
-            variant(in_place_etor_t<val>,A&& ...a) noexcept(noexcept(new(data.data()) lookup<val>(std::forward<A>(a)...))) : tag(val){
+            variant(in_place_etor_t<val>,A&& ...a) noexcept(noexcept(new(data.data()) lookup<val>(std::forward<A>(a)...))) : _tag(val){
                 new(data.data()) lookup<val>(std::forward<A>(a)...);
             }
             template<E val> requires(std::is_void_v<lookup<val>>)
-            variant(in_place_etor_t<val>) noexcept : tag(val){}
-            variant(const variant& other) noexcept(info_t::is_nothrow_copy_constructible) : tag(other.tag){
+            variant(in_place_etor_t<val>) noexcept : _tag(val){}
+            variant(const variant& other) noexcept(info_t::is_nothrow_copy_constructible) : _tag(other._tag){
                 data_emplace_from(other);
             }
-            variant(variant&& other) noexcept(info_t::is_nothrow_move_constructible) : tag(other.tag){
+            variant(variant&& other) noexcept(info_t::is_nothrow_move_constructible) : _tag(other._tag){
                 data_emplace_from(std::move(other));
             }
             variant& operator=(const variant& other) noexcept(is_nothrow_copy_assignable){
-                if(tag == other.tag){
+                if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                         if constexpr(!is_void_type(ei.t)){
-                            if(ei.v == tag){
+                            if(ei.v == _tag){
                                 _get<typename[:ei.t:]>() = other._get<typename[:ei.t:]>();
                             }
                         }
@@ -201,21 +201,21 @@ namespace cppp{
                         try{
                             data_emplace_from(other);
                         }catch(...){
-                            tag = access_constexpr_etor<info_t::infos[0uz].v>;
+                            _tag = access_constexpr_etor<info_t::infos[0uz].v>;
                             throw;
                         }
                     }else{
                         data_emplace_from(other); // this will call std::terminate because of noexcept
                     }
-                    tag = other.tag;
+                    _tag = other._tag;
                 }
                 return *this;
             }
             variant& operator=(variant&& other) noexcept(is_nothrow_move_assignable){
-                if(tag == other.tag){
+                if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                         if constexpr(!is_void_type(ei.t)){
-                            if(ei.v == tag){
+                            if(ei.v == _tag){
                                 _get<typename[:ei.t:]>() = std::move(other._get<typename[:ei.t:]>());
                             }
                         }
@@ -226,50 +226,50 @@ namespace cppp{
                         try{
                             data_emplace_from(std::move(other));
                         }catch(...){
-                            tag = access_constexpr_etor<info_t::infos[0uz].v>;
+                            _tag = access_constexpr_etor<info_t::infos[0uz].v>;
                             throw;
                         }
                     }else{
                         data_emplace_from(std::move(other)); // this will call std::terminate because of noexcept
                     }
-                    tag = other.tag;
+                    _tag = other._tag;
                 }
                 return *this;
             }
             explicit operator bool() requires(is_optional){
-                return tag != access_constexpr_etor<info_t::infos[0uz].v>;
+                return _tag != access_constexpr_etor<info_t::infos[0uz].v>;
             }
-            E index() const noexcept{
-                return tag;
+            E tag() const noexcept{
+                return _tag;
             }
             template<E val,typename ...A>
             lookup<val>& emplace(A&& ...a) noexcept(noexcept(new(data.data()) lookup<val>(std::forward<A>(a)...))){
                 _destroy();
-                tag = val;
+                _tag = val;
                 return *new(data.data()) lookup<val>(std::forward<A>(a)...);
             }
             template<E val>
             void emplace() noexcept requires(std::is_void_v<lookup<val>>){
                 _destroy();
-                tag = val;
+                _tag = val;
             }
             template<E val>
             const lookup<val>& get() const noexcept{
-                CPPP_ASSERT(tag == val);
+                CPPP_ASSERT(_tag == val);
                 return _get<lookup<val>>();
             }
             template<E val>
             lookup<val>& get() noexcept{
-                CPPP_ASSERT(tag == val);
+                CPPP_ASSERT(_tag == val);
                 return _get<lookup<val>>();
             }
             bool has(E val) const noexcept{
-                return tag == val;
+                return _tag == val;
             }
             template<typename Fn>
             decltype(auto) visit(Fn&& fn){
                 template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
-                    if(ei.v == tag){
+                    if(ei.v == _tag){
                         if constexpr(is_void_type(ei.t)){
                             return std::forward<Fn>(fn)();
                         }else{
@@ -282,7 +282,7 @@ namespace cppp{
             template<typename Fn>
             decltype(auto) visit(Fn&& fn) const{
                 template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
-                    if(ei.v == tag){
+                    if(ei.v == _tag){
                         if constexpr(is_void_type(ei.t)){
                             return std::forward<Fn>(fn)();
                         }else{
@@ -333,7 +333,7 @@ namespace cppp{
         constexpr static E access_constexpr_etor = v;
         using info_t = detail::enum_info<E>;
         void* data;
-        E tag;
+        E _tag;
         template<typename T>
         constexpr T& _get() noexcept{
             return *static_cast<T*>(data);
@@ -349,17 +349,17 @@ namespace cppp{
         public:
             template<E v>
             using lookup = info_t::template lookup<v>;
-            constexpr heap_variant() noexcept requires(is_optional) : tag(access_constexpr_etor<info_t::infos[0uz].v>){}
+            constexpr heap_variant() noexcept requires(is_optional) : _tag(access_constexpr_etor<info_t::infos[0uz].v>){}
             template<E val,typename ...A> requires(!std::is_void_v<lookup<val>>)
-            constexpr heap_variant(in_place_etor_t<val>,A&& ...a) : data(new lookup<val>(std::forward<A>(a)...)), tag(val){}
+            constexpr heap_variant(in_place_etor_t<val>,A&& ...a) : data(new lookup<val>(std::forward<A>(a)...)), _tag(val){}
             template<E val> requires(std::is_void_v<lookup<val>>)
-            constexpr heap_variant(in_place_etor_t<val>) noexcept : tag(val){}
-            constexpr heap_variant(const heap_variant& other) noexcept(info_t::is_nothrow_copy_constructible) : data(other.visit(detail::heap_copy())), tag(other.tag){}
-            constexpr heap_variant(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible) : data(other.visit(detail::heap_move())), tag(other.tag){}
+            constexpr heap_variant(in_place_etor_t<val>) noexcept : _tag(val){}
+            constexpr heap_variant(const heap_variant& other) noexcept(info_t::is_nothrow_copy_constructible) : data(other.visit(detail::heap_copy())), _tag(other._tag){}
+            constexpr heap_variant(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible) : data(other.visit(detail::heap_move())), _tag(other._tag){}
             constexpr heap_variant& operator=(const heap_variant& other) noexcept(info_t::is_nothrow_copy_assignable){
-                if(tag == other.tag){
+                if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
-                        if(ei.v == tag){
+                        if(ei.v == _tag){
                             if constexpr(!is_void_type(ei.t)){
                                 _get<typename[:ei.t:]>() = other._get<typename[:ei.t:]>();
                             }
@@ -369,14 +369,14 @@ namespace cppp{
                     void* p = other.visit(detail::heap_copy());
                     _destroy();
                     data = p;
-                    tag = other.tag;
+                    _tag = other._tag;
                 }
                 return *this;
             }
             constexpr heap_variant& operator=(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible){
-                if(tag == other.tag){
+                if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
-                        if(ei.v == tag){
+                        if(ei.v == _tag){
                             if constexpr(!is_void_type(ei.t)){
                                 _get<typename[:ei.t:]>() = std::move(other._get<typename[:ei.t:]>());
                             }
@@ -386,20 +386,20 @@ namespace cppp{
                     void* p = other.visit(detail::heap_move());
                     _destroy();
                     data = p;
-                    tag = other.tag;
+                    _tag = other._tag;
                 }
                 return *this;
             }
             constexpr explicit operator bool() requires(is_optional){
-                return tag != access_constexpr_etor<info_t::infos[0uz].v>;
+                return _tag != access_constexpr_etor<info_t::infos[0uz].v>;
             }
-            constexpr E index() const noexcept{
-                return tag;
+            constexpr E tag() const noexcept{
+                return _tag;
             }
             template<E val,typename ...A>
             constexpr lookup<val>& emplace(A&& ...a) noexcept(noexcept(new lookup<val>(std::forward<A>(a)...))){
                 _destroy();
-                tag = val;
+                _tag = val;
                 lookup<val>* p = new lookup<val>(std::forward<A>(a)...);
                 data = p;
                 return *p;
@@ -407,33 +407,33 @@ namespace cppp{
             template<E val>
             constexpr void emplace() noexcept requires(std::is_void_v<lookup<val>>){
                 _destroy();
-                tag = val;
+                _tag = val;
             }
             template<E val>
             constexpr const lookup<val>& get() const noexcept{
                 if consteval{
-                    cppp::consteval_assert(tag == val);
+                    cppp::consteval_assert(_tag == val);
                 }else{
-                    CPPP_ASSERT(tag == val);
+                    CPPP_ASSERT(_tag == val);
                 }
                 return _get<lookup<val>>();
             }
             template<E val>
             constexpr lookup<val>& get() noexcept{
                 if consteval{
-                    cppp::consteval_assert(tag == val);
+                    cppp::consteval_assert(_tag == val);
                 }else{
-                    CPPP_ASSERT(tag == val);
+                    CPPP_ASSERT(_tag == val);
                 }
                 return _get<lookup<val>>();
             }
             constexpr bool has(E val) const noexcept{
-                return tag == val;
+                return _tag == val;
             }
             template<typename Fn>
             constexpr decltype(auto) visit(Fn&& fn){
                 template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
-                    if(ei.v == tag){
+                    if(ei.v == _tag){
                         if constexpr(is_void_type(ei.t)){
                             return std::forward<Fn>(fn)();
                         }else{
@@ -446,7 +446,7 @@ namespace cppp{
             template<typename Fn>
             constexpr decltype(auto) visit(Fn&& fn) const{
                 template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
-                    if(ei.v == tag){
+                    if(ei.v == _tag){
                         if constexpr(is_void_type(ei.t)){
                             return std::forward<Fn>(fn)();
                         }else{
