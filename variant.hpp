@@ -394,7 +394,7 @@ namespace cppp{
                 emplace_construct<lookup<val>>(std::forward<A>(a)...);
             }
             template<E val> requires(std::is_void_v<lookup<val>>)
-            constexpr heap_variant(in_place_etor_t<val>) noexcept : data(nullptr), _tag(val){}
+            constexpr heap_variant(in_place_etor_t<val>) noexcept : data{}, _tag(val){}
             constexpr heap_variant(const heap_variant& other) noexcept(info_t::is_nothrow_copy_constructible()) : data{}, _tag(other._tag){
                 template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                     if(ei.v == _tag){
