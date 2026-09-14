@@ -25,7 +25,7 @@ namespace cppp{
                 return extract<etor_annot>(etor_annots.front()).type;
             }else{
                 std::vector<std::meta::info> annots{annotations_of(etor)};
-                if(annots.empty()) throw std::meta::exception(u8"cppp::variant: enumerator does not have a type annotation"sv,etor);
+                if(annots.empty()) return ^^void;
                 if(annots.size() == 1uz && type_of(annots.front()) == dealias(^^std::meta::info) && is_type(extract<std::meta::info>(annots.front()))){
                     std::meta::info type = extract<std::meta::info>(annots.front());
                     if(is_lvalue_reference_type(type) || is_rvalue_reference_type(type)){
