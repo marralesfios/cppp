@@ -1,6 +1,7 @@
 #pragma once
 #include"template-string.hpp"
 #include"string.hpp"
+#include<ostream>
 #include<print>
 namespace cppp{
     template<c_template_string pat,typename ...T>
@@ -18,5 +19,22 @@ namespace cppp{
     template<template_string pat,typename ...T>
     void println(T&& ...v){
         println<pat.template charconv<char>()>(std::forward<T>(v)...);
+    }
+    
+    template<c_template_string pat,typename ...T>
+    void print(std::ostream& os,T&& ...v){
+        std::print(os,pat.sv(),forward_to_stdstring<T>(v)...);
+    }
+    template<c_template_string pat,typename ...T>
+    void println(std::ostream& os,T&& ...v){
+        std::println(os,pat.sv(),forward_to_stdstring<T>(v)...);
+    }
+    template<template_string pat,typename ...T>
+    void print(std::ostream& os,T&& ...v){
+        print<pat.template charconv<char>()>(os,std::forward<T>(v)...);
+    }
+    template<template_string pat,typename ...T>
+    void println(std::ostream& os,T&& ...v){
+        println<pat.template charconv<char>()>(os,std::forward<T>(v)...);
     }
 }
