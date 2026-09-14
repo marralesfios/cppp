@@ -33,7 +33,7 @@ namespace cppp{
         }();
     }
     template<typename ...Tv>
-    class heap_variant{
+    class type_heap_variant{
         void* data;
         std::size_t num;
         void destroy() noexcept{
@@ -44,8 +44,8 @@ namespace cppp{
                 data = nullptr;
             }
         }
-        heap_variant clone() const{
-            return dispatch([]<typename T>(T& obj) static -> heap_variant {
+        type_heap_variant clone() const{
+            return dispatch([]<typename T>(T& obj) static -> type_heap_variant {
                 return {obj};
             });
         }
@@ -53,18 +53,18 @@ namespace cppp{
             template<typename T>
             constexpr static std::size_t index_of = detail::pack_find_i<T,Tv...>;
             constexpr static std::size_t none{std::numeric_limits<std::size_t>::max()};
-            constexpr heap_variant() noexcept : data(nullptr), num(0uz){}
-            constexpr explicit heap_variant(std::size_t num,void* data) noexcept : data(data), num(num){}
+            constexpr type_heap_variant() noexcept : data(nullptr), num(0uz){}
+            constexpr explicit type_heap_variant(std::size_t num,void* data) noexcept : data(data), num(num){}
             template<typename T> requires(... || std::same_as<std::remove_cvref_t<T>,Tv>)
-            heap_variant(T&& inst) : data(new std::remove_cvref_t<T>(std::forward<T>(inst))), num(index_of<std::remove_cvref_t<T>>){}
+            type_heap_variant(T&& inst) : data(new std::remove_cvref_t<T>(std::forward<T>(inst))), num(index_of<std::remove_cvref_t<T>>){}
             template<typename T,typename ...A>
-            heap_variant(emplace_tag_t<T>,A&& ...argv) : data(new T(std::forward<A>(argv)...)), num(index_of<std::remove_cvref_t<T>>){}
-            heap_variant(const heap_variant& other) : heap_variant(other.clone()){}
-            constexpr heap_variant(heap_variant&& other) noexcept : data(std::exchange(other.data,nullptr)), num(other.num){}
-            heap_variant& operator=(const heap_variant& other){
+            type_heap_variant(emplace_tag_t<T>,A&& ...argv) : data(new T(std::forward<A>(argv)...)), num(index_of<std::remove_cvref_t<T>>){}
+            type_heap_variant(const type_heap_variant& other) : type_heap_variant(other.clone()){}
+            constexpr type_heap_variant(type_heap_variant&& other) noexcept : data(std::exchange(other.data,nullptr)), num(other.num){}
+            type_heap_variant& operator=(const type_heap_variant& other){
                 *this = other.clone();
             }
-            constexpr heap_variant& operator=(heap_variant&& other) noexcept{
+            constexpr type_heap_variant& operator=(type_heap_variant&& other) noexcept{
                 reset(other.num,std::exchange(other.data,nullptr));
                 return *this;
             }
@@ -161,7 +161,7 @@ namespace cppp{
             constexpr explicit operator bool() const noexcept{
                 return data;
             }
-            ~heap_variant(){
+            ~type_heap_variant(){
                 destroy();
             }
     };
