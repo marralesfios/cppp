@@ -46,6 +46,9 @@ namespace cppp{
             std::size_t size() const noexcept{
                 return buf.size();
             }
+            bool empty() const noexcept{
+                return buf.empty();
+            }
             T* release() noexcept{
                 T* m = data();
                 buf = {};
