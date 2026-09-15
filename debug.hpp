@@ -8,7 +8,7 @@ namespace cppp{
     inline namespace debugging{
         template<typename T>
         void debug_item(const T* p){
-            print<u8"{:p}"_ts>(std::clog,p);
+            print<u8"{:p}"_ts>(std::clog,static_cast<const void*>(p));
         }
         inline void debug_item(char c){
             print<u8"'{}'"_ts>(std::clog,c);
