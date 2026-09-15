@@ -88,8 +88,8 @@ namespace cppp{
                 CPPP_ASSERT(sizeof(Derived) <= stride);
                 return {reinterpret_cast<data_type*>(static_cast<Derived*>(get())),stride};
             }
-            constexpr bool operator==(erased_ptr<Base> other) const noexcept{
-                return m == other.m && stride == other.stride;
+            friend constexpr bool operator==(const erased_ptr<Base>& lhs,const erased_ptr<Base>& rhs) noexcept{
+                return lhs.m == rhs.m && lhs.stride == rhs.stride;
             }
     };
     template<typename Base>
