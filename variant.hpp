@@ -351,9 +351,6 @@ namespace cppp{
                 CPPP_ASSERT(_tag == val);
                 return _get<lookup<val>>();
             }
-            bool has(E val) const noexcept{
-                return _tag == val;
-            }
             template<typename Fn>
             decltype(auto) visit(Fn&& fn){
                 template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
@@ -564,9 +561,6 @@ namespace cppp{
                     CPPP_ASSERT(_tag == val);
                 }
                 return _get<lookup<val>>();
-            }
-            constexpr bool has(E val) const noexcept{
-                return _tag == val;
             }
             template<typename Fn>
             constexpr decltype(auto) visit(Fn&& fn){
