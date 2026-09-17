@@ -19,7 +19,7 @@ namespace cppp{
             template<std::ranges::sized_range R>
             constexpr fixed_array(std::from_range_t,R&& ran) : buf(std::allocator<T>().allocate(std::ranges::size(ran))), len(std::ranges::size(ran)){
                 try{
-                    std::uninitialized_copy(std::ranges::begin(ran),len,buf);
+                    std::uninitialized_copy(std::ranges::begin(ran),std::ranges::end(ran),buf);
                 }catch(...){
                     std::allocator<T>().deallocate(buf,len);
                     throw;
