@@ -1,75 +1,85 @@
 #pragma once
-#include<cstdint>
+#include<cstddef>
 #include<utility>
 #include<ranges>
-#include<span>
+#include<memory>
+#include"memory.hpp"
 namespace cppp{
-    struct value_init_tag_t{} constexpr inline value_init_tag;
     template<typename T>
     class fixed_array{
-        std::span<T> buf;
+        T* buf;
+        std::size_t len;
+        constexpr void _destroy() noexcept{
+            if(buf){
+                std::destroy_n(buf,len);
+                std::allocator<T>().deallocate(buf,len);
+            }
+        }
         public:
-            fixed_array() = default;
             template<std::ranges::sized_range R>
-            fixed_array(R&& ran) : fixed_array(std::ranges::size(ran)){
-                std::ranges::copy(ran,begin());
+            constexpr fixed_array(std::from_range_t,R&& ran) : buf(std::allocator<T>().allocate(std::ranges::size(ran))), len(std::ranges::size(ran)){
+                try{
+                    std::ranges::uninitialized_copy(ran,begin());
+                }catch(...){
+                    std::allocator<T>().deallocate(buf,len);
+                    throw;
+                }
             }
-            // special initializer_list ctor to prevent {element} from matching the size_t ctor
-            fixed_array(std::initializer_list<T> il) : fixed_array(std::ranges::size(il)){
-                std::ranges::copy(il,begin());
+            fixed_array(std::initializer_list<T> il) : fixed_array(std::from_range,il){}
+            fixed_array(uninitialized_memory<T>&& mem) : buf(mem.release()), len(mem.size()){}
+            fixed_array(std::size_t sz) : buf(std::allocator<T>().allocate(sz)), len(sz){
+                try{
+                    std::ranges::uninitialized_value_construct(buf);
+                }catch(...){
+                    std::allocator<T>().deallocate(buf,len);
+                    throw;
+                }
             }
-            // don't take a std::span or we may conflict with the above
-            fixed_array(T* m,std::size_t n) : buf(m,n){}
-            fixed_array(std::size_t sz) : buf(new T[sz],sz){}
-            fixed_array(std::size_t sz,value_init_tag_t) : buf(new T[sz](),sz){}
-            template<typename ...C>
-            fixed_array(std::size_t sz,std::in_place_t,C& ...t) : buf(new T[sz](t...),sz){}
             fixed_array(const fixed_array&) = delete;
-            fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,std::span<T>())){}
+            fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,nullptr)), len(std::exchange(other.len,0uz)){}
             fixed_array& operator=(const fixed_array&) = delete;
-            fixed_array& operator=(fixed_array&& other) noexcept{
-                buf = std::exchange(other.buf,std::span<T>());
+            constexpr fixed_array& operator=(fixed_array&& other) noexcept{
+                if(this != &other){
+                    _destroy();
+                    buf = std::exchange(other.buf,nullptr);
+                    len = other.len;
+                }
                 return *this;
             }
-            T& operator[](std::size_t i) noexcept{
+            constexpr T& operator[](std::size_t i) noexcept{
                 return buf[i];
             }
-            const T& operator[](std::size_t i) const noexcept{
+            constexpr const T& operator[](std::size_t i) const noexcept{
                 return buf[i];
             }
-            T* data() noexcept{
-                return buf.data();
+            constexpr T* data() noexcept{
+                return buf;
             }
-            const T* data() const noexcept{
-                return buf.data();
+            constexpr const T* data() const noexcept{
+                return buf;
             }
-            std::size_t size() const noexcept{
-                return buf.size();
+            constexpr std::size_t size() const noexcept{
+                return len;
             }
-            bool empty() const noexcept{
-                return buf.empty();
-            }
-            T* release() noexcept{
-                T* m = data();
-                buf = {};
-                return m;
+            constexpr bool empty() const noexcept{
+                return !len;
             }
             using iterator = T*;
             using const_iterator = const T*;
-            T* begin() noexcept{
-                return buf.data();
+            constexpr T* begin() noexcept{
+                return buf;
             }
-            const T* begin() const noexcept{
-                return buf.data();
+            constexpr const T* begin() const noexcept{
+                return buf;
             }
-            T* end() noexcept{
-                return buf.data()+buf.size();
+            constexpr T* end() noexcept{
+                return buf+len;
             }
-            const T* end() const noexcept{
-                return buf.data()+buf.size();
+            constexpr const T* end() const noexcept{
+                return buf+len;
             }
-            ~fixed_array(){
-                delete[] buf.data();
+            constexpr ~fixed_array(){
+                _destroy();
             }
     };
 }

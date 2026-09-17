@@ -37,6 +37,15 @@ namespace cppp{
                 new(p + i) T(std::forward<A>(a)...);
                 return p[i];
             }
+            const T* data() const{
+                return p;
+            }
+            T* data(){
+                return p;
+            }
+            std::size_t size() const{
+                return n;
+            }
             void destroy_at(std::size_t i) noexcept{
                 p[i].~T();
             }
