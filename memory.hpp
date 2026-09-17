@@ -33,17 +33,17 @@ namespace cppp{
                 return *this;
             }
             template<typename ...A>
-            constexpr T& emplace_at(std::size_t i,A&& ...a){
+            constexpr T& emplace_at(std::size_t i,A&& ...a) noexcept(std::is_nothrow_constructible_v<T,A...>){
                 new(p + i) T(std::forward<A>(a)...);
                 return p[i];
             }
-            const T* data() const{
+            const T* data() const noexcept{
                 return p;
             }
-            T* data(){
+            T* data() noexcept{
                 return p;
             }
-            std::size_t size() const{
+            std::size_t size() const noexcept{
                 return n;
             }
             void destroy_at(std::size_t i) noexcept{

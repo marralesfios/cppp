@@ -19,24 +19,24 @@ namespace cppp{
             template<std::ranges::sized_range R>
             constexpr fixed_array(std::from_range_t,R&& ran) : buf(std::allocator<T>().allocate(std::ranges::size(ran))), len(std::ranges::size(ran)){
                 try{
-                    std::ranges::uninitialized_copy(ran,begin());
+                    std::uninitialized_copy(std::ranges::begin(ran),len,buf);
                 }catch(...){
                     std::allocator<T>().deallocate(buf,len);
                     throw;
                 }
             }
-            fixed_array(std::initializer_list<T> il) : fixed_array(std::from_range,il){}
-            fixed_array(uninitialized_memory<T>&& mem) : buf(mem.release()), len(mem.size()){}
-            fixed_array(std::size_t sz) : buf(std::allocator<T>().allocate(sz)), len(sz){
+            constexpr fixed_array(std::initializer_list<T> il) : fixed_array(std::from_range,il){}
+            constexpr fixed_array(uninitialized_memory<T>&& mem) noexcept : buf(mem.release()), len(mem.size()){}
+            constexpr fixed_array(std::size_t sz) : buf(std::allocator<T>().allocate(sz)), len(sz){
                 try{
-                    std::ranges::uninitialized_value_construct(buf);
+                    std::uninitialized_value_construct_n(buf,len);
                 }catch(...){
                     std::allocator<T>().deallocate(buf,len);
                     throw;
                 }
             }
             fixed_array(const fixed_array&) = delete;
-            fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,nullptr)), len(std::exchange(other.len,0uz)){}
+            constexpr fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,nullptr)), len(std::exchange(other.len,0uz)){}
             fixed_array& operator=(const fixed_array&) = delete;
             constexpr fixed_array& operator=(fixed_array&& other) noexcept{
                 if(this != &other){
