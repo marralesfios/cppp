@@ -27,6 +27,8 @@ namespace cppp{
     template<detail::enumeration E>
     class variant{
         public:
+            template<E v>
+            using lookup = __error_type;
             variant() noexcept;
             template<E val,typename ...A>
             variant(in_place_etor_t<val>,A&& ...a);
@@ -52,6 +54,8 @@ namespace cppp{
     template<detail::enumeration E>
     class heap_variant{
         public:
+            template<E v>
+            using lookup = __error_type;
             constexpr heap_variant() noexcept;
             template<E val,typename ...A>
             constexpr heap_variant(in_place_etor_t<val>,A&& ...a);
