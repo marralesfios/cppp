@@ -39,11 +39,10 @@ namespace cppp{
             constexpr fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,nullptr)), len(std::exchange(other.len,0uz)){}
             fixed_array& operator=(const fixed_array&) = delete;
             constexpr fixed_array& operator=(fixed_array&& other) noexcept{
-                if(this != &other){
-                    _destroy();
-                    buf = std::exchange(other.buf,nullptr);
-                    len = other.len;
-                }
+                T* tmp = std::exchange(other.buf,nullptr);
+                _destroy();
+                buf = tmp;
+                len = other.len;
                 return *this;
             }
             constexpr T& operator[](std::size_t i) noexcept{
