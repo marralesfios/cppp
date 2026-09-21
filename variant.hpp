@@ -9,6 +9,7 @@
 #include<meta>
 #endif
 #include<new>
+#include"concepts.hpp"
 #include"launder.hpp"
 #include"assert.hpp"
 #include"trap.hpp"
@@ -16,15 +17,11 @@
 #include"rtl.hpp"
 #ifdef __INTELLISENSE__
 namespace cppp{
-    namespace detail{
-        template<typename T>
-        concept enumeration = std::is_enum_v<T>;
-    }
-    template<detail::enumeration auto v>
+    template<enumeration auto v>
     struct in_place_etor_t{};
-    template<detail::enumeration auto v>
+    template<enumeration auto v>
     constexpr inline in_place_etor_t<v> in_place_etor;
-    template<detail::enumeration E>
+    template<enumeration E>
     class variant{
         public:
             template<E v>
@@ -51,7 +48,7 @@ namespace cppp{
             __error_type visit(Fn&& fn) const;
             ~variant();
     };
-    template<detail::enumeration E>
+    template<enumeration E>
     class heap_variant{
         public:
             template<E v>
@@ -82,8 +79,6 @@ namespace cppp{
 #else
 namespace cppp{
     namespace detail{
-        template<typename T>
-        concept enumeration = std::is_enum_v<T>;
         struct etor_annot{
             std::meta::info type;
         };
@@ -214,11 +209,11 @@ namespace cppp{
     }
     template<typename T>
     constexpr inline detail::etor_annot etor{.type = ^^T};
-    template<detail::enumeration auto v>
+    template<enumeration auto v>
     struct in_place_etor_t{};
-    template<detail::enumeration auto v>
+    template<enumeration auto v>
     constexpr inline in_place_etor_t<v> in_place_etor;
-    template<detail::enumeration E>
+    template<enumeration E>
     class variant{
         #if __cpp_consteval >= 202406L
         #warning P4101 might be merged! Check to see if access_constexpr_etor is still necessary.
@@ -389,7 +384,7 @@ namespace cppp{
         template<typename T>
         concept eligible_for_soo = sizeof(T) <= sizeof(void*) && alignof(T) <= alignof(void*);
     }
-    template<detail::enumeration E>
+    template<enumeration E>
     class heap_variant{
         #if __cpp_consteval >= 202406L
         #warning P4101 might be merged! Check to see if access_constexpr_etor is still necessary.

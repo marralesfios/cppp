@@ -5,6 +5,7 @@
 #include<cstddef>
 #include<utility>
 #include<limits>
+#include"assert.hpp"
 #include"trap.hpp"
 namespace cppp{
     namespace detail{
@@ -56,10 +57,20 @@ namespace cppp{
     }
     
     template<typename U,typename T>
-    consteval U safe_cast(T v){
+    consteval U safe_cast(T v) noexcept{
         consteval_assert(in_range<U>(v));
         return static_cast<U>(v);
     }
+    template<typename U,typename T>
+    constexpr U assume_cast(T v) noexcept{
+        if consteval{
+            consteval_assert(in_range<U>(v));
+        }else{
+            CPPP_ASSERT(in_range<U>(v));
+        }
+        return static_cast<U>(v);
+    }
+    
     inline namespace literals{
         consteval std::byte operator""_b(unsigned long long x){
             return safe_cast<std::byte>(x);
@@ -72,6 +83,8 @@ namespace cppp{
         CPPP_DEFINE_INTEGRAL_LITERALS(16);
         CPPP_DEFINE_INTEGRAL_LITERALS(32);
         CPPP_DEFINE_INTEGRAL_LITERALS(64);
+        CPPP_DEFINE_INTEGRAL_LITERALS(ptr);
+        CPPP_DEFINE_INTEGRAL_LITERALS(max);
         #undef CPPP_DEFINE_INTEGRAL_LITERALS
     }
 }
