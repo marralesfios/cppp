@@ -17,6 +17,7 @@
 #include"rtl.hpp"
 #ifdef __INTELLISENSE__
 namespace cppp{
+    struct uninitialize_t{} constexpr inline uninitialize;
     template<enumeration auto v>
     struct in_place_etor_t{};
     template<enumeration auto v>
@@ -27,6 +28,7 @@ namespace cppp{
             template<E v>
             using lookup = __error_type;
             variant() noexcept;
+            variant(uninitialize_t) noexcept;
             template<E val,typename ...A>
             variant(in_place_etor_t<val>,A&& ...a);
             variant(const variant& other);
@@ -36,12 +38,13 @@ namespace cppp{
             explicit operator bool();
             E tag() const noexcept;
             template<E val,typename ...A>
+            __error_type initialize(A&& ...a);
+            template<E val,typename ...A>
             __error_type emplace(A&& ...a);
             template<E val>
             const __error_type& get() const noexcept;
             template<E val>
             __error_type& get() noexcept;
-            bool has(E val) const noexcept;
             template<typename Fn>
             __error_type visit(Fn&& fn);
             template<typename Fn>
@@ -54,6 +57,7 @@ namespace cppp{
             template<E v>
             using lookup = __error_type;
             constexpr heap_variant() noexcept;
+            constexpr heap_variant(uninitialize_t) noexcept;
             template<E val,typename ...A>
             constexpr heap_variant(in_place_etor_t<val>,A&& ...a);
             constexpr heap_variant(const heap_variant& other);
@@ -63,12 +67,13 @@ namespace cppp{
             constexpr explicit operator bool();
             constexpr E tag() const noexcept;
             template<E val,typename ...A>
+            constexpr __error_type initialize(A&& ...a);
+            template<E val,typename ...A>
             constexpr __error_type emplace(A&& ...a);
             template<E val>
             constexpr const __error_type& get() const noexcept;
             template<E val>
             constexpr __error_type& get() noexcept;
-            constexpr bool has(E val) const noexcept;
             template<typename Fn>
             constexpr __error_type visit(Fn&& fn);
             template<typename Fn>
@@ -209,6 +214,7 @@ namespace cppp{
     }
     template<typename T>
     constexpr inline detail::etor_annot etor{.type = ^^T};
+    struct uninitialize_t{} constexpr inline uninitialize;
     template<enumeration auto v>
     struct in_place_etor_t{};
     template<enumeration auto v>
@@ -236,27 +242,28 @@ namespace cppp{
             visit(detail::inplace_destroy());
         }
         template<typename T,typename ...A>
-        void emplace_construct(A&& ...a) noexcept(std::is_nothrow_constructible_v<T,A...>){
-            new(data.data()) T(std::forward<A>(a)...);
+        T& emplace_construct(A&& ...a) noexcept(std::is_nothrow_constructible_v<T,A...>){
+            return *new(data.data()) T(std::forward<A>(a)...);
         }
         template<typename T,typename ...A>
-        void _emplace(A&& ...a) noexcept(!info_t::is_optional || std::is_nothrow_constructible_v<T,A...>){
+        T& _emplace(A&& ...a) noexcept(!info_t::is_optional || std::is_nothrow_constructible_v<T,A...>){
             _destroy();
             if constexpr(info_t::is_optional && !std::is_nothrow_constructible_v<T,A...>){
                 try{
-                    emplace_construct<T>(std::forward<A>(a)...);
+                    return emplace_construct<T>(std::forward<A>(a)...);
                 }catch(...){
                     _tag = access_constexpr_etor<info_t::infos[0uz].v>;
                     throw;
                 }
             }else{
-                emplace_construct<T>(std::forward<A>(a)...);
+                return emplace_construct<T>(std::forward<A>(a)...);
             }
         }
         public:
             template<E v>
             using lookup = info_t::template lookup<v>;
             variant() noexcept requires(info_t::is_optional) : _tag(access_constexpr_etor<info_t::infos[0uz].v>){}
+            variant(uninitialize_t) noexcept{}
             template<E val,typename ...A> requires(!std::is_void_v<lookup<val>>)
             variant(in_place_etor_t<val>,A&& ...a) noexcept(noexcept(new(data.data()) lookup<val>(std::forward<A>(a)...))) : _tag(val){
                 emplace_construct<lookup<val>>(std::forward<A>(a)...);
@@ -330,10 +337,20 @@ namespace cppp{
                 return _tag;
             }
             template<E val,typename ...A>
-            lookup<val>& emplace(A&& ...a) noexcept(noexcept(new(data.data()) lookup<val>(std::forward<A>(a)...))){
-                _destroy();
+            lookup<val>& initialize(A&& ...a) noexcept(std::is_nothrow_constructible_v<lookup<val>,A...>){
+                lookup<val>& ref = emplace_construct<lookup<val>>(std::forward<A>(a)...);
                 _tag = val;
-                return *new(data.data()) lookup<val>(std::forward<A>(a)...);
+                return ref;
+            }
+            template<E val>
+            void initialize() noexcept requires(std::is_void_v<lookup<val>>){
+                _tag = val;
+            }
+            template<E val,typename ...A>
+            lookup<val>& emplace(A&& ...a) noexcept(!info_t::is_optional || std::is_nothrow_constructible_v<lookup<val>,A...>){
+                lookup<val>& ref = _emplace<lookup<val>>(std::forward<A>(a)...);
+                _tag = val;
+                return ref;
             }
             template<E val>
             void emplace() noexcept requires(std::is_void_v<lookup<val>>){
@@ -427,39 +444,43 @@ namespace cppp{
             }
         }
         template<typename T,typename ...A>
-        constexpr void emplace_construct(A&& ...a) noexcept(detail::eligible_for_soo<T> && std::is_nothrow_constructible_v<T,A...>){
+        constexpr T& emplace_construct(A&& ...a) noexcept(std::is_nothrow_constructible_v<T,A...>){
             if constexpr(detail::eligible_for_soo<T>){
-                new(data) T(std::forward<A>(a)...);
+                return *new(data) T(std::forward<A>(a)...);
             }else{
                 using voidp = void*;
-                new(data) voidp(new T(std::forward<A>(a)...));
+                T* p;
+                new(data) voidp(p = new T(std::forward<A>(a)...));
+                return *p;
             }
         }
         template<typename T,typename ...A>
-        constexpr void _emplace(A&& ...a) noexcept(!info_t::is_optional || (detail::eligible_for_soo<T> && std::is_nothrow_constructible_v<T,A...>)){
+        constexpr T& _emplace(A&& ...a) noexcept(std::is_nothrow_constructible_v<T,A...> || (detail::eligible_for_soo<T> && !info_t::is_optional)){
             if constexpr(detail::eligible_for_soo<T>){
                 _destroy();
                 if constexpr(info_t::is_optional && !std::is_nothrow_constructible_v<T,A...>){
                     try{
-                        emplace_construct<T>(std::forward<A>(a)...);
+                        return *new(data) T(std::forward<A>(a)...);
                     }catch(...){
                         _tag = access_constexpr_etor<info_t::infos[0uz].v>;
                         throw;
                     }
                 }else{
-                    emplace_construct<T>(std::forward<A>(a)...);
+                    return *new(data) T(std::forward<A>(a)...);
                 }
             }else{
                 T* alloc = new T(std::forward<A>(a)...);
                 _destroy();
                 using voidp = void*;
                 new(data) voidp(alloc);
+                return *alloc;
             }
         }
         public:
             template<E v>
             using lookup = info_t::template lookup<v>;
             constexpr heap_variant() noexcept requires(info_t::is_optional) : data{}, _tag(access_constexpr_etor<info_t::infos[0uz].v>){}
+            constexpr heap_variant(uninitialize_t) noexcept{}
             template<E val,typename ...A> requires(!std::is_void_v<lookup<val>>)
             constexpr heap_variant(in_place_etor_t<val>,A&& ...a) : data{}, _tag(val){
                 emplace_construct<lookup<val>>(std::forward<A>(a)...);
@@ -484,7 +505,8 @@ namespace cppp{
                     }
                 }
             }
-            constexpr heap_variant& operator=(const heap_variant& other) noexcept(info_t::is_nothrow_copy_assignable()){
+            // TODO: revise noexcept specification
+            constexpr heap_variant& operator=(const heap_variant& other){
                 if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                         if constexpr(!is_void_type(ei.t)){
@@ -505,7 +527,8 @@ namespace cppp{
                 }
                 return *this;
             }
-            constexpr heap_variant& operator=(heap_variant&& other) noexcept(info_t::is_nothrow_move_constructible()){
+            // TODO: revise noexcept specification
+            constexpr heap_variant& operator=(heap_variant&& other){
                 if(_tag == other._tag){
                     template for(constexpr const detail::etor_info<E>& ei : info_t::infos){
                         if(ei.v == _tag){
@@ -533,10 +556,20 @@ namespace cppp{
                 return _tag;
             }
             template<E val,typename ...A>
-            constexpr lookup<val>& emplace(A&& ...a) noexcept(!info_t::is_optional || (detail::eligible_for_soo<lookup<val>> && std::is_nothrow_constructible_v<lookup<val>,A...>)){
-                _emplace<lookup<val>>(std::forward<A>(a)...);
+            constexpr lookup<val>& initialize(A&& ...a) noexcept(std::is_nothrow_constructible_v<lookup<val>,A...>){
+                lookup<val>& ref = emplace_construct<lookup<val>>(std::forward<A>(a)...);
                 _tag = val;
-                return _get<lookup<val>>();
+                return ref;
+            }
+            template<E val>
+            constexpr void initialize() noexcept requires(std::is_void_v<lookup<val>>){
+                _tag = val;
+            }
+            template<E val,typename ...A>
+            constexpr lookup<val>& emplace(A&& ...a) noexcept(std::is_nothrow_constructible_v<lookup<val>,A...> || (detail::eligible_for_soo<lookup<val>> && !info_t::is_optional)){
+                lookup<val>& ref = _emplace<lookup<val>>(std::forward<A>(a)...);
+                _tag = val;
+                return ref;
             }
             template<E val>
             constexpr void emplace() noexcept requires(std::is_void_v<lookup<val>>){
