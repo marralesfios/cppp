@@ -9,6 +9,7 @@
 #include<limits>
 #include<bit>
 #include"binary.hpp"
+#include"bytearray.hpp"
 namespace cppp{
     struct file_error : std::exception{};
     struct operation_failed : file_error{};
@@ -25,11 +26,11 @@ namespace cppp{
             BinaryFile(){
                 fs.exceptions(std::ios_base::badbit);
             }
-            BinaryFile(std::filesystem::path path,std::ios::openmode mode) : fs(path,mode){
+            BinaryFile(const std::filesystem::path& path,std::ios::openmode mode) : fs(path,mode){
                 fs.exceptions(std::ios_base::badbit);
                 errchk();
             }
-            void open(std::filesystem::path path,std::ios::openmode mode){
+            void open(const std::filesystem::path& path,std::ios::openmode mode){
                 fs.open(path,mode);
                 errchk();
             }
@@ -123,4 +124,14 @@ namespace cppp{
                 fs.close();
             }
     };
+    template<std::size_t by=1024uz>
+    void read_file(bytes& to,const std::filesystem::path& p,std::ios_base::openmode mode=std::ios_base::in|std::ios_base::binary){
+        BinaryFile infile{p,mode};
+        std::array<std::byte,by> buf;
+        std::size_t nread;
+        do{
+            nread = infile.read(buf);
+            to.append(std::span{buf.data(),nread});
+        }while(nread);
+    }
 }
