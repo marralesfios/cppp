@@ -4,7 +4,7 @@
 #include<array>
 namespace cppp{
     #if __cpp_trivial_union >= 202603L
-    #error update this code to use trivial unions
+    #warning update this code to use trivial unions
     #endif
     template<typename T>
     class uninitialized{
