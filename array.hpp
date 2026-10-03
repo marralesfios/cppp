@@ -35,9 +35,16 @@ namespace cppp{
                     throw;
                 }
             }
-            fixed_array(const fixed_array&) = delete;
-            constexpr fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,nullptr)), len(std::exchange(other.len,0uz)){}
-            fixed_array& operator=(const fixed_array&) = delete;
+            fixed_array(const fixed_array& other) : fixed_array(std::from_range,other){}
+            constexpr fixed_array(fixed_array&& other) noexcept : buf(std::exchange(other.buf,nullptr)), len(other.len){}
+            fixed_array& operator=(const fixed_array& other){
+                uninitialized_memory<T> alloc{other.size()};
+                std::uninitialized_copy_n(other.begin(),other.size(),alloc.get());
+                _destroy();
+                buf = alloc.release();
+                len = other.len;
+                return *this;
+            }
             constexpr fixed_array& operator=(fixed_array&& other) noexcept{
                 T* tmp = std::exchange(other.buf,nullptr);
                 _destroy();
