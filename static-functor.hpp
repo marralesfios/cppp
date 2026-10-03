@@ -5,7 +5,7 @@ namespace cppp{
     class static_functor{
         using fptr_t = std::remove_reference_t<decltype(Fref)>*;
         public:
-            consteval operator fptr_t() noexcept{
+            consteval operator fptr_t() const noexcept{
                 return &Fref;
             }
     };
