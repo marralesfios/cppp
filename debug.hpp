@@ -11,11 +11,7 @@ namespace cppp{
     inline namespace debugging{
         template<typename T>
         void debug_item(const T* p){
-            if constexpr(std::is_void_v<T>){
-                print<u8"{:p}"_ts>(std::clog,p);
-            }else{
-                print<u8"({}*){:p}"_ts>(std::clog,u8display_string_of(^^T),static_cast<const void*>(p));
-            }
+            print<u8"({}*){:p}"_ts>(std::clog,u8display_string_of(^^T),static_cast<const void*>(p));
         }
         inline void debug_item(char c){
             print<u8"'{}'"_ts>(std::clog,c);
@@ -25,10 +21,10 @@ namespace cppp{
             print<u8"{:d}"_ts>(std::clog,i);
         }
         inline void debug_item(cppp::sv s){
-            print<u8"{}"_ts>(std::clog,s);
+            print<u8"\"{}\""_ts>(std::clog,s);
         }
         inline void debug_item(std::string_view s){
-            print<u8"{}"_ts>(std::clog,s);
+            print<u8"\"{}\""_ts>(std::clog,s);
         }
         template<typename E> requires(std::is_enum_v<E>)
         inline void debug_item(E ev){
