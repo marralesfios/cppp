@@ -155,9 +155,7 @@ namespace cppp{
         };
     }
     template<typename T,typename ...A>
-    concept requires_temporary_storage_when_called_with = requires{
-        typename T::template temporary_storage_type<A...>;
-    };
+    concept requires_temporary_storage_when_called_with = !std::is_void_v<typename T::template temporary_storage_type<A...>>;
     template<typename T,typename ...A>
     struct temporary_storage_type_of{
         using type = void;
@@ -206,11 +204,21 @@ namespace cppp{
     namespace detail{
         template<typename T>
         using store_if_nonreference = std::conditional_t<std::is_reference_v<T>,std::monostate,constexpr_uninitialized<T>>;
+        template<typename ...T>
+        struct tuple_or_stateless{
+            using type = std::tuple<T...>;
+        };
+        template<std::same_as<std::monostate> ...T>
+        struct tuple_or_stateless<T...>{
+            using type = void;
+        };
+        template<typename ...T>
+        using tuple_or_stateless_t = tuple_or_stateless<T...>::type;
     }
     template<typename T,typename U>
     struct atop{
         template<typename ...A>
-        using temporary_storage_type = std::tuple<
+        using temporary_storage_type = detail::tuple_or_stateless_t<
             coalesce_void_type_t<temporary_storage_type_of_t<T,A...>,std::monostate>,
             coalesce_void_type_t<temporary_storage_type_of_t<U,A...>,std::monostate>,
             detail::store_if_nonreference<stateless_invoke_with_possible_temporary_storage_result<U,A...>>
@@ -218,6 +226,7 @@ namespace cppp{
         template<typename ...A> requires(
             stateless_functor_with_possible_temporary_storage<U,A...>
             && stateless_functor_with_possible_temporary_storage<T,stateless_invoke_with_possible_temporary_storage_result<U,A...>>
+            && !std::same_as<temporary_storage_type<A...>,void>
         )
         constexpr static decltype(auto) operator()(temporary_storage_type<A...>&& strg,A&& ...a) noexcept(stateless_nothrow_invocable_with_possible_temporary_storage<U,A...> && stateless_nothrow_invocable_with_possible_temporary_storage<T,stateless_invoke_with_possible_temporary_storage_result<U,A...>>){
             if constexpr(std::is_reference_v<stateless_invoke_with_possible_temporary_storage_result<U,A...>>){
@@ -225,6 +234,10 @@ namespace cppp{
             }else{
                 return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),*::new(&std::get<2uz>(strg).member) stateless_invoke_with_possible_temporary_storage_result<U,A...>(invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...)));
             }
+        }
+        template<typename ...A> requires(stateless_functor<U,A...> && stateless_functor<T,stateless_invoke_result<U,A...>> && std::same_as<temporary_storage_type<A...>,void>)
+        constexpr static decltype(auto) operator()(A&& ...a) noexcept(stateless_nothrow_invocable<U,A...> && stateless_nothrow_invocable<T,stateless_invoke_result<U,A...>>){
+            return invoke_stateless<T>(invoke_stateless<U>(std::forward<A>(a)...));
         }
     };
 }
