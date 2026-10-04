@@ -48,11 +48,11 @@ namespace cppp{
                 return obj.[:method:](std::forward<A>(a)...);
             }
             template<typename ...A>
-            constexpr static decltype(auto) operator()(object_type&& obj,A&& ...a) noexcept(noexcept(obj.[:method:](std::forward<A>(a)...))){
+            constexpr static decltype(auto) operator()(object_type&& obj,A&& ...a) noexcept(noexcept(std::move(obj).[:method:](std::forward<A>(a)...))){
                 return std::move(obj).[:method:](std::forward<A>(a)...);
             }
             template<typename ...A>
-            constexpr static decltype(auto) operator()(const object_type&& obj,A&& ...a) noexcept(noexcept(obj.[:method:](std::forward<A>(a)...))){
+            constexpr static decltype(auto) operator()(const object_type&& obj,A&& ...a) noexcept(noexcept(std::move(obj).[:method:](std::forward<A>(a)...))){
                 return std::move(obj).[:method:](std::forward<A>(a)...);
             }
     };
