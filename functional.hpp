@@ -153,7 +153,9 @@ namespace cppp{
                 T member;
             };
             constexpr constexpr_uninitialized() noexcept{}
-            constexpr ~constexpr_uninitialized() noexcept{}
+            constexpr ~constexpr_uninitialized() noexcept{
+                member.~T();
+            }
         };
     }
     template<typename T,typename ...A>
