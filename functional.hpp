@@ -38,10 +38,12 @@ namespace cppp{
         return invoke_stateless<T>(std::forward<A>(a)...);
     };
     namespace detail{
+        template<typename T>
+        using clref_if_none = std::conditional_t<std::is_reference_v<T>,T,const T&>;
         template<typename F,typename T>
         struct unary_specify_or_deduce_parameters_functor{
-            constexpr static decltype(auto) operator()(T&& val) noexcept(stateless_nothrow_invocable<F,T>){
-                return invoke_stateless<F>(std::forward<T>(val));
+            constexpr static decltype(auto) operator()(clref_if_none<T>&& val) noexcept(stateless_nothrow_invocable<F,T>){
+                return invoke_stateless<F>(std::forward<clref_if_none<T>>(val));
             }
         };
         template<typename F>
@@ -53,22 +55,22 @@ namespace cppp{
         };
         template<typename F,typename T,typename U>
         struct binary_specify_or_deduce_parameters_functor{
-            constexpr static decltype(auto) operator()(T&& lhs,U&& rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
-                return invoke_stateless<F>(std::forward<T>(lhs),std::forward<U>(rhs));
+            constexpr static decltype(auto) operator()(clref_if_none<T>&& lhs,clref_if_none<U>&& rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
+                return invoke_stateless<F>(std::forward<clref_if_none<T>>(lhs),std::forward<clref_if_none<U>>(rhs));
             }
         };
         template<typename F,typename U>
         struct binary_specify_or_deduce_parameters_functor<F,void,U>{
             template<typename T>
-            constexpr static decltype(auto) operator()(T&& lhs,U&& rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
-                return invoke_stateless<F>(std::forward<T>(lhs),std::forward<U>(rhs));
+            constexpr static decltype(auto) operator()(T&& lhs,clref_if_none<U> rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
+                return invoke_stateless<F>(std::forward<T>(lhs),std::forward<clref_if_none<U>>(rhs));
             }
         };
         template<typename F,typename T>
         struct binary_specify_or_deduce_parameters_functor<F,T,void>{
             template<typename U>
-            constexpr static decltype(auto) operator()(T&& lhs,U&& rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
-                return invoke_stateless<F>(std::forward<T>(lhs),std::forward<U>(rhs));
+            constexpr static decltype(auto) operator()(clref_if_none<T> lhs,U&& rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
+                return invoke_stateless<F>(std::forward<clref_if_none<T>>(lhs),std::forward<U>(rhs));
             }
         };
         template<typename F>
