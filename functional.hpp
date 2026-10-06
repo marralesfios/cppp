@@ -21,9 +21,9 @@ namespace cppp{
         template<typename T,typename ...A>
         constexpr stateless_invoke_result<T,A...>(&refer_to_stateless_functor())(A...) noexcept{
             if constexpr(requires{
-                {&T::operator()} -> std::convertible_to<stateless_invoke_result<T,A...>(&)(A...)>;
+                {T::operator()} -> std::convertible_to<stateless_invoke_result<T,A...>(&)(A...)>;
             }){
-                return &T::operator();
+                return T::operator();
             }else{
                 return *[](A... a) static noexcept(stateless_nothrow_invocable<T,A...>) -> stateless_invoke_result<T,A...>{
                     return invoke_stateless<T>(static_cast<A&&>(a)...);
@@ -34,7 +34,7 @@ namespace cppp{
     template<typename T,typename ...A> requires(stateless_functor<T,A...>)
     constexpr stateless_invoke_result<T,A...>(&reference_to_stateless_functor)(A...) = detail::refer_to_stateless_functor<T,A...>();
     template<typename T,typename ...A> requires(stateless_functor<T,A...>)
-    constexpr stateless_invoke_result<T,A...>(&argument_forwarding_reference_to_stateless_functor)(A...) = *[](A&& ...a) static noexcept(stateless_nothrow_invocable<T,A...>) -> stateless_invoke_result<T,A...>{
+    constexpr stateless_invoke_result<T,A...>(&argument_forwarding_reference_to_stateless_functor)(A&&...) = *[](A&& ...a) static noexcept(stateless_nothrow_invocable<T,A...>) -> stateless_invoke_result<T,A...>{
         return invoke_stateless<T>(std::forward<A>(a)...);
     };
     namespace detail{
@@ -42,7 +42,7 @@ namespace cppp{
         using clref_if_none = std::conditional_t<std::is_reference_v<T>,T,const T&>;
         template<typename F,typename T>
         struct unary_specify_or_deduce_parameters_functor{
-            constexpr static decltype(auto) operator()(clref_if_none<T>&& val) noexcept(stateless_nothrow_invocable<F,T>){
+            constexpr static decltype(auto) operator()(clref_if_none<T>&& val) noexcept(stateless_nothrow_invocable<F,clref_if_none<T>>){
                 return invoke_stateless<F>(std::forward<clref_if_none<T>>(val));
             }
         };
@@ -62,14 +62,14 @@ namespace cppp{
         template<typename F,typename U>
         struct binary_specify_or_deduce_parameters_functor<F,void,U>{
             template<typename T>
-            constexpr static decltype(auto) operator()(T&& lhs,clref_if_none<U> rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
+            constexpr static decltype(auto) operator()(T&& lhs,clref_if_none<U> rhs) noexcept(stateless_nothrow_invocable<F,T,clref_if_none<U>>){
                 return invoke_stateless<F>(std::forward<T>(lhs),std::forward<clref_if_none<U>>(rhs));
             }
         };
         template<typename F,typename T>
         struct binary_specify_or_deduce_parameters_functor<F,T,void>{
             template<typename U>
-            constexpr static decltype(auto) operator()(clref_if_none<T> lhs,U&& rhs) noexcept(stateless_nothrow_invocable<F,T,U>){
+            constexpr static decltype(auto) operator()(clref_if_none<T> lhs,U&& rhs) noexcept(stateless_nothrow_invocable<F,clref_if_none<T>,U>){
                 return invoke_stateless<F>(std::forward<clref_if_none<T>>(lhs),std::forward<U>(rhs));
             }
         };
@@ -98,22 +98,22 @@ namespace cppp{
     template<typename T=void,typename U=T>
     using not_equal_to = detail::binary_specify_or_deduce_parameters_functor<std::not_equal_to<void>,T,U>;
     template<typename T=void,typename U=T>
-    using greater = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) > std::forward<U>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) > std::forward<U>(rhs);}),T,U>;
+    using greater = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) > std::forward<Q>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) > std::forward<Q>(rhs);}),T,U>;
     // applies the total ordering for pointers
     template<typename T=void,typename U=T>
     using std_greater = detail::binary_specify_or_deduce_parameters_functor<std::greater<void>,T,U>;
     template<typename T=void,typename U=T>
-    using less = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) < std::forward<U>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) < std::forward<U>(rhs);}),T,U>;
+    using less = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) < std::forward<Q>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) < std::forward<Q>(rhs);}),T,U>;
     // applies the total ordering for pointers
     template<typename T=void,typename U=T>
     using std_less = detail::binary_specify_or_deduce_parameters_functor<std::less<void>,T,U>;
     template<typename T=void,typename U=T>
-    using greater_equal = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) >= std::forward<U>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) >= std::forward<U>(rhs);}),T,U>;
+    using greater_equal = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) >= std::forward<Q>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) >= std::forward<Q>(rhs);}),T,U>;
     // applies the total ordering for pointers
     template<typename T=void,typename U=T>
     using std_greater_equal = detail::binary_specify_or_deduce_parameters_functor<std::greater_equal<void>,T,U>;
     template<typename T=void,typename U=T>
-    using less_equal = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) <= std::forward<U>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) <= std::forward<U>(rhs);}),T,U>;
+    using less_equal = detail::binary_specify_or_deduce_parameters_functor<decltype([]<typename P,typename Q>(P&& lhs,Q&& rhs)static noexcept(noexcept(std::forward<P>(lhs) <= std::forward<Q>(rhs))) -> decltype(auto) {return std::forward<P>(lhs) <= std::forward<Q>(rhs);}),T,U>;
     // applies the total ordering for pointers
     template<typename T=void,typename U=T>
     using std_less_equal = detail::binary_specify_or_deduce_parameters_functor<std::less_equal<void>,T,U>;
@@ -153,9 +153,7 @@ namespace cppp{
                 T member;
             };
             constexpr constexpr_uninitialized() noexcept{}
-            constexpr ~constexpr_uninitialized() noexcept{
-                member.~T();
-            }
+            constexpr ~constexpr_uninitialized() noexcept{}
         };
     }
     template<typename T,typename ...A>
@@ -223,7 +221,7 @@ namespace cppp{
     struct atop{
         template<typename ...A>
         using temporary_storage_type = detail::tuple_or_stateless_t<
-            coalesce_void_type_t<temporary_storage_type_of_t<T,A...>,std::monostate>,
+            coalesce_void_type_t<temporary_storage_type_of_t<T,stateless_invoke_with_possible_temporary_storage_result<U,A...>>,std::monostate>,
             coalesce_void_type_t<temporary_storage_type_of_t<U,A...>,std::monostate>,
             detail::store_if_nonreference<stateless_invoke_with_possible_temporary_storage_result<U,A...>>
         >;
@@ -236,7 +234,17 @@ namespace cppp{
             if constexpr(std::is_reference_v<stateless_invoke_with_possible_temporary_storage_result<U,A...>>){
                 return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...));
             }else{
-                return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),*::new(&std::get<2uz>(strg).member) stateless_invoke_with_possible_temporary_storage_result<U,A...>(invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...)));
+                stateless_invoke_with_possible_temporary_storage_result<U,A...>& intermediate = *::new(&std::get<2uz>(strg).member) stateless_invoke_with_possible_temporary_storage_result<U,A...>(invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...));
+                try{
+                    return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),std::move(intermediate));
+                }catch(...){
+                    std::destroy_at(&intermediate);
+                    // GCC erroneously warns about a rethrow statement calling terminate even if the try-block is in fact noexcept
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wterminate"
+                    throw;
+                    #pragma GCC diagnostic pop
+                }
             }
         }
         template<typename ...A> requires(stateless_functor<U,A...> && stateless_functor<T,stateless_invoke_result<U,A...>> && std::same_as<temporary_storage_type<A...>,void>)
