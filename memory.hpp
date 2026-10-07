@@ -4,18 +4,23 @@
 #include<utility>
 #include<cstddef>
 #include<memory>
+#include<span>
 #include"exchange.hpp"
 #include"assert.hpp"
 namespace cppp{
+    template<typename T,std::size_t extent>
+    constexpr void destroy_backwards(std::span<T,extent> spn) noexcept{
+        std::size_t i = spn.size();
+        while(i--){
+            spn[i].~T();
+        }
+    }
     /*
     RAII uninitialized memory block helper
     
     This class is intended to temporarily hold a memory pointer, and deallocate it when it goes out of scope, for use in holding temporary allocations in reallocation functions (e.g. an append function for a dynamic array). You should probably call release() or exchange() in an old allocation if there are no errors.
     
-    emplace_at() and admit() do not leave behind constructed objects when they throw exceptions, but when successful they do NOT ensure that the constructed elements are destroyed together with the container if the latter is not released. You should ensure this yourself.
-    
-    
-    This class will probably be obsoleted by (or at least significantly reworked in the presence of) the more generic std::scope_exit helper in LF TS v3 if/when it makes it into the standard.
+    emplace_at() and adopt() do not leave behind constructed objects when they throw exceptions, but when successful they do NOT ensure that the constructed elements are destroyed together with the container if the latter is not released. You should ensure this yourself.
     */
     template<typename T>
     class uninitialized_memory{
@@ -49,16 +54,18 @@ namespace cppp{
             void destroy_at(std::size_t i) noexcept{
                 p[i].~T();
             }
-            constexpr void exchange(T*& p2,std::size_t n2) noexcept{
-                n = n2;
-                std::ranges::swap(p,p2);
+            void destroy_n_from_begin(std::size_t firstn) noexcept{
+                destroy_backwards(std::span{p,firstn});
             }
-            constexpr void admit(T* other,std::size_t n) noexcept(std::is_nothrow_move_constructible_v<T>){
+            constexpr std::span<T> exchange(T* p2,std::size_t n2) noexcept{
+                return {std::exchange(p,p2),std::exchange(n,n2)};
+            }
+            constexpr void adopt(T* other,std::size_t n) noexcept(std::is_nothrow_move_constructible_v<T>){
                 std::uninitialized_move_n(other,n,p);
             }
-            constexpr void admit_and_destroy(T* other,std::size_t n) noexcept(std::is_nothrow_move_constructible_v<T>){
-                admit(other,n);
-                std::destroy_n(other,n);
+            constexpr void adopt_and_destroy(T* other,std::size_t n) noexcept(std::is_nothrow_move_constructible_v<T>){
+                adopt(other,n);
+                destroy_backwards(std::span{other,n});
             }
             constexpr const T* get() const noexcept{
                 return p;
@@ -76,7 +83,7 @@ namespace cppp{
     template<typename T>
     constexpr T* grow(T* mem,std::size_t length,std::size_t capacity,std::size_t tocapacity){
         uninitialized_memory<T> dstbuf{tocapacity};
-        dstbuf.admit_and_destroy(mem,length);
+        dstbuf.adopt_and_destroy(mem,length);
         dstbuf.exchange(mem,capacity);
         return mem;
     }
@@ -84,7 +91,7 @@ namespace cppp{
     constexpr T* shrink(T* mem,std::size_t length,std::size_t capacity,std::size_t tocapacity){
         std::ranges::destroy(mem+tocapacity,mem+length);
         uninitialized_memory<T> dstbuf{tocapacity};
-        dstbuf.admit_and_destroy(mem,tocapacity);
+        dstbuf.adopt_and_destroy(mem,tocapacity);
         dstbuf.exchange(mem,capacity);
         return mem;
     }
@@ -93,7 +100,7 @@ namespace cppp{
         uninitialized_memory<T> dstbuf{nto};
         dstbuf.emplace_at(nfrom,std::forward<A>(a)...);
         try{
-            dstbuf.admit_and_destroy(mem,nfrom);
+            dstbuf.adopt_and_destroy(mem,nfrom);
         }catch(...){
             dstbuf.destroy_at(nfrom);
             throw;
