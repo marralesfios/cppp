@@ -7,7 +7,7 @@ namespace cppp{
     
     // Custom version of ULEB128, highest bit of each byte is the opposite of its normal value
     template<std::unsigned_integral T>
-    T muleb128_r(frozen_byte_view& b){
+    constexpr T muleb128_r(frozen_byte_view& b) noexcept{
         T r = 0;
         std::byte v;
         std::uint16_t n = 0;
@@ -20,7 +20,7 @@ namespace cppp{
         return r;
     }
     template<std::unsigned_integral T>
-    void muleb128_w(bytes& dst,T v){
+    constexpr void muleb128_w(bytes& dst,T v){
         do{
             dst.append(static_cast<std::byte>(v)&0x7f_b);
             v >>= 7;
