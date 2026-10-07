@@ -11,7 +11,7 @@ namespace cppp{
         zeroing_field<std::byte*> _m;
         zeroing_field<std::size_t> _l;
         zeroing_field<std::size_t> _c;
-        void _reallocate(){
+        constexpr void _reallocate(){
             if(std::size_t cpc=*_c){
                 std::byte* nbuf = new std::byte[cpc];
                 std::copy(*_m,*_m+*_l,nbuf);
@@ -24,51 +24,51 @@ namespace cppp{
             constexpr bytes() noexcept = default;
             constexpr bytes(bytes&&) noexcept = default;
             constexpr bytes& operator=(bytes&&) noexcept = default;
-            bytes(std::initializer_list<std::byte> b){
+            constexpr bytes(std::initializer_list<std::byte> b){
                 std::copy_n(b.begin(),b.size(),resb(b.size()));
             }
-            bytes(frozenbuffer b){
+            constexpr bytes(frozenbuffer b){
                 append(b);
             }
             constexpr bool empty() const noexcept{
                 return *_l == 0uz;
             }
-            void append(frozenbuffer b){
+            constexpr void append(frozenbuffer b){
                 std::copy_n(b.data(),b.size(),resb(b.size()));
             }
-            std::byte* resb(std::size_t n){
+            constexpr std::byte* resb(std::size_t n){
                 std::size_t old_size = *_l;
                 resize(*_l+n);
                 return *_m+old_size;
             }
-            void append(std::byte v){
+            constexpr void append(std::byte v){
                 *resb(1uz) = v;
             }
-            void append(std::uint8_t v){
+            constexpr void append(std::uint8_t v){
                 append(std::byte{v});
             }
             template<typename I>
-            void appendl(I v){
+            constexpr void appendl(I v){
                 write<I>(resb(sizeof(I)),v);
             }
-            void reserve(std::size_t ns){
+            constexpr void reserve(std::size_t ns){
                 while(ns>*_c){
                     *_c += std::max(*_c,1uz);
                 }
                 _reallocate();
             }
-            void resize(std::size_t ns){
+            constexpr void resize(std::size_t ns){
                 reserve(ns);
                 _l = ns;
             }
-            void resize(std::size_t ns,std::byte b){
+            constexpr void resize(std::size_t ns,std::byte b){
                 reserve(ns);
                 if(ns>*_l){
                     std::fill(*_m+*_l,*_m+ns,b);
                 }
                 _l = ns;
             }
-            void clear(){
+            constexpr void clear(){
                 _c = _l = 0;
                 _reallocate();
             }
@@ -110,13 +110,13 @@ namespace cppp{
             constexpr std::size_t capacity() const noexcept{
                 return *_c;
             }
-            void shrink_to_fit(){
+            constexpr void shrink_to_fit(){
                 if(*_l<*_c){
                     _c = *_l;
                     _reallocate();
                 }
             }
-            ~bytes(){
+            constexpr ~bytes(){
                 delete[] *_m;
             }
     };
