@@ -252,4 +252,11 @@ namespace cppp{
             return invoke_stateless<T>(invoke_stateless<U>(std::forward<A>(a)...));
         }
     };
+    template<typename T>
+    struct close_temporary_scope{
+        template<typename ...A> requires(stateless_functor_with_possible_temporary_storage<T,A...>)
+        constexpr static decltype(auto) operator()(A&& ...a) noexcept(stateless_nothrow_invocable_with_possible_temporary_storage<T,A...>){
+            return invoke_stateless_with_temporary_storage<T>({},std::forward<A>(a)...);
+        }
+    };
 }
