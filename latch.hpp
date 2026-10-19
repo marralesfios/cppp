@@ -28,7 +28,6 @@ namespace cppp{
             _serialize();
         }
         #else
-        #include<cpuid.h>
         inline void serialize() noexcept{
             asm("xor %%eax, %%eax\ncpuid" : : : "cc", "rax", "rbx", "rcx", "rdx");
         }
