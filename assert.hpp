@@ -16,7 +16,13 @@ namespace cppp{
             std::abort();
         }
     }
+    [[noreturn]] constexpr inline void todo(std::source_location where=std::source_location::current()) noexcept{
+        using namespace std::literals;
+        std::cerr << "Unimplemented code reached in function "sv << where.function_name() << " at "sv << where.file_name() << ':' << where.line() << ':' << where.column() << '\n';
+        std::abort();
+    }
 }
+
 
 #ifdef NDEBUG
 #include<utility>
