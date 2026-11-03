@@ -2,7 +2,6 @@
 #include<experimental/propagate_const>
 #include<utility>
 #include<memory>
-#include"virtual.hpp"
 namespace cppp{
     template<typename T>
     class ptr : public std::experimental::propagate_const<std::unique_ptr<T>>{
