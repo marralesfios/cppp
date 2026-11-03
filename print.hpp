@@ -14,11 +14,11 @@ namespace cppp{
     }
     template<template_string pat,typename ...T>
     void print(T&& ...v){
-        print<pat.template charconv<char>()>(std::forward<T>(v)...);
+        print<pat.template convert<char>()>(std::forward<T>(v)...);
     }
     template<template_string pat,typename ...T>
     void println(T&& ...v){
-        println<pat.template charconv<char>()>(std::forward<T>(v)...);
+        println<pat.template convert<char>()>(std::forward<T>(v)...);
     }
     
     template<c_template_string pat,typename ...T>

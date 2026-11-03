@@ -5,20 +5,21 @@
 namespace cppp{
     template<typename CharT,std::size_t l>
     struct basic_template_string{
-        CharT arr[l];
+        CharT arr[l+1uz];
         using iterator = CharT*;
         using const_iterator = const CharT*;
-        constexpr basic_template_string(const CharT(&a)[l]){
-            std::copy_n(a,l,arr);
+        constexpr basic_template_string(const CharT(&a)[l+1uz]){
+            std::ranges::copy_n(a,l+1uz,arr);
         }
-        constexpr basic_template_string(CharT v) requires(l==2) : arr{v,static_cast<CharT>(0)}{}
+        constexpr basic_template_string(CharT v) requires(l==1uz) : arr{v,static_cast<CharT>(0)}{}
         constexpr std::size_t size() const{
-            return l-1uz;
+            return l;
         }
         template<typename OtherCt>
-        constexpr basic_template_string<OtherCt,l> charconv() const{
-            OtherCt other_arr[l];
+        constexpr basic_template_string<OtherCt,l> convert() const{
+            OtherCt other_arr[l+1uz];
             std::size_t i = l;
+            other_arr[i] = static_cast<OtherCt>(0);
             while(i--){
                 other_arr[i] = static_cast<OtherCt>(arr[i]);
             }
@@ -51,33 +52,29 @@ namespace cppp{
         constexpr CharT& back(){
             return arr[size()-1];
         }
-        constexpr char* begin(){
+        constexpr CharT* begin(){
             return arr;
         }
-        constexpr char* end(){
+        constexpr CharT* end(){
             return arr+size();
         }
-        constexpr const char* begin() const{
+        constexpr const CharT* begin() const{
             return arr;
         }
-        constexpr const char* end() const{
+        constexpr const CharT* end() const{
             return arr+size();
         }
-        private:
-            template<std::size_t n>
-            constexpr basic_template_string(basic_template_string<CharT,n> left,basic_template_string<CharT,l-n+1> right){
-                std::copy_n(left.arr,n-1,arr);
-                std::copy_n(right.arr,l-n+1,arr+n-1);
-            }
-            template<typename C,std::size_t u,std::size_t v>
-            friend constexpr basic_template_string<C,u+v-1uz> operator+(basic_template_string<C,u>,basic_template_string<C,v>);
     };
     template<typename C,std::size_t u,std::size_t v>
-    constexpr basic_template_string<C,u+v-1uz> operator+(basic_template_string<C,u> lhs,basic_template_string<C,v> rhs){
-        return {lhs,rhs};
+    constexpr basic_template_string<C,u+v> operator+(basic_template_string<C,u> lhs,basic_template_string<C,v> rhs){
+        C arr[u+v+1uz];
+        *std::ranges::copy(rhs,std::ranges::copy(lhs,arr).out) = static_cast<C>(0);
+        return arr;
     }
     template<typename CharT>
-    basic_template_string(CharT v) -> basic_template_string<CharT,2uz>;
+    basic_template_string(CharT v) -> basic_template_string<CharT,1uz>;
+    template<typename CharT,std::size_t n>
+    basic_template_string(const CharT(&a)[n]) -> basic_template_string<CharT,n-1uz>;
     template<std::size_t n>
     using c_template_string = basic_template_string<char,n>;
     template<std::size_t n>
@@ -88,7 +85,7 @@ namespace cppp{
         consteval decltype(s) operator ""_ts(){
             return s;
         }
-        #define CPPP_DEFINE_CHAR_TS_LITERAL(type) consteval basic_template_string<type,2uz> operator ""_ts(type c){ return {c}; }
+        #define CPPP_DEFINE_CHAR_TS_LITERAL(type) consteval basic_template_string<type,1uz> operator ""_ts(type c){ return {c}; }
         CPPP_DEFINE_CHAR_TS_LITERAL(char);
         CPPP_DEFINE_CHAR_TS_LITERAL(wchar_t);
         CPPP_DEFINE_CHAR_TS_LITERAL(char8_t);
