@@ -12,7 +12,7 @@ namespace cppp{
             constexpr std::size_t operator()(const std::u8string& v) const noexcept{
                 return std::hash<std::u8string>()(v);
             }
-            constexpr std::size_t operator()(const std::u8string_view& v) const noexcept{
+            constexpr std::size_t operator()(std::u8string_view v) const noexcept{
                 return std::hash<std::u8string_view>()(v);
             }
         };
@@ -27,7 +27,7 @@ namespace cppp{
             constexpr bool operator()(const std::u8string& lhs,const std::u8string_view& rhs) const noexcept{
                 return lhs == rhs;
             }
-            constexpr bool operator()(const std::u8string_view& lhs,const std::u8string_view& rhs) const noexcept{
+            constexpr bool operator()(std::u8string_view lhs,std::u8string_view rhs) const noexcept{
                 return lhs == rhs;
             }
         };
@@ -36,13 +36,13 @@ namespace cppp{
             constexpr bool operator()(const std::u8string& lhs,const std::u8string& rhs) const noexcept{
                 return lhs < rhs;
             }
-            constexpr bool operator()(const std::u8string_view& lhs,const std::u8string& rhs) const noexcept{
+            constexpr bool operator()(std::u8string_view lhs,const std::u8string& rhs) const noexcept{
                 return lhs < rhs;
             }
-            constexpr bool operator()(const std::u8string& lhs,const std::u8string_view& rhs) const noexcept{
+            constexpr bool operator()(const std::u8string& lhs,std::u8string_view rhs) const noexcept{
                 return lhs < rhs;
             }
-            constexpr bool operator()(const std::u8string_view& lhs,const std::u8string_view& rhs) const noexcept{
+            constexpr bool operator()(std::u8string_view lhs,std::u8string_view rhs) const noexcept{
                 return lhs < rhs;
             }
         };
