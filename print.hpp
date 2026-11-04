@@ -31,10 +31,10 @@ namespace cppp{
     }
     template<template_string pat,typename ...T>
     void print(std::ostream& os,T&& ...v){
-        print<pat.template charconv<char>()>(os,std::forward<T>(v)...);
+        print<pat.template convert<char>()>(os,std::forward<T>(v)...);
     }
     template<template_string pat,typename ...T>
     void println(std::ostream& os,T&& ...v){
-        println<pat.template charconv<char>()>(os,std::forward<T>(v)...);
+        println<pat.template convert<char>()>(os,std::forward<T>(v)...);
     }
 }
