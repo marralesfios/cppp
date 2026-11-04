@@ -7,7 +7,7 @@ namespace cppp{
         using namespace std::literals;
         for(std::meta::info item : members_of(^^T,std::meta::access_context::unprivileged())){
             try{
-                if(extract<M T::*>(item) == member){
+                if(!is_static_member(item) && extract<M T::*>(item) == member){
                     return item;
                 }
             }catch(...){}
