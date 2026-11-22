@@ -216,6 +216,22 @@ namespace cppp{
         };
         template<typename ...T>
         using tuple_or_stateless_t = tuple_or_stateless<T...>::type;
+        template<typename T>
+        class unique_placement_resource{
+            T* p;
+            public:
+                unique_placement_resource(T& obj) : p(&obj){}
+                unique_placement_resource(const unique_placement_resource&) = delete;
+                unique_placement_resource(unique_placement_resource&&) = delete;
+                unique_placement_resource& operator=(const unique_placement_resource&) = delete;
+                unique_placement_resource& operator=(unique_placement_resource&&) = delete;
+                T& operator*(){
+                    return *p;
+                }
+                ~unique_placement_resource(){
+                    p->~T();
+                }
+        };
     }
     template<typename T,typename U>
     struct atop{
@@ -234,11 +250,11 @@ namespace cppp{
             if constexpr(std::is_reference_v<stateless_invoke_with_possible_temporary_storage_result<U,A...>>){
                 return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...));
             }else{
-                stateless_invoke_with_possible_temporary_storage_result<U,A...>& intermediate = *::new(&std::get<2uz>(strg).member) stateless_invoke_with_possible_temporary_storage_result<U,A...>(invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...));
+                
+                detail::unique_placement_resource<stateless_invoke_with_possible_temporary_storage_result<U,A...>> intermediate = *::new(&std::get<2uz>(strg).member) stateless_invoke_with_possible_temporary_storage_result<U,A...>(invoke_stateless_with_temporary_storage<U>(std::get<1uz>(std::move(strg)),std::forward<A>(a)...));
                 try{
-                    return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),std::move(intermediate));
+                    return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),std::move(*intermediate));
                 }catch(...){
-                    std::destroy_at(&intermediate);
                     // GCC erroneously warns about a rethrow statement calling terminate even if the try-block is in fact noexcept
                     #pragma GCC diagnostic push
                     #pragma GCC diagnostic ignored "-Wterminate"
