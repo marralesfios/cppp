@@ -1,6 +1,5 @@
 #pragma once
 #include"type-traits.hpp"
-#include<exception>
 #include<functional>
 #include<concepts>
 #include<utility>
@@ -155,9 +154,7 @@ namespace cppp{
             };
             constexpr constexpr_uninitialized() noexcept{}
             constexpr ~constexpr_uninitialized() noexcept{
-                if(!std::uncaught_exceptions()){
-                    member.~T();
-                }
+                member.~T();
             }
         };
     }
@@ -222,8 +219,12 @@ namespace cppp{
         template<typename ...T>
         using tuple_or_stateless_t = tuple_or_stateless<T...>::type;
     }
+    /*
+    WARNING:
+    The temporary storage functionality of this facility has been discovered to be exception-unsafe without trivial fixes, as well as unable to properly extend the lifetime of default argument objects, the latter of which is currently unfixable due to language limitations. Thus, this class has been indefinitely deprecated, possibly to be reinstated in the future but with the temporary storage functionality removed (unless a language feature such as `declcall` is added). In the meantime, if temporary storage is used, any exceptions trying to propagate out of the function will now invoke std::terminate() instead.
+    */
     template<typename T,typename U>
-    struct atop{
+    struct [[deprecated("dangerous, see comment")]] atop{
         template<typename ...A>
         using temporary_storage_type = detail::tuple_or_stateless_t<
             coalesce_void_type_t<temporary_storage_type_of_t<T,stateless_invoke_with_possible_temporary_storage_result<U,A...>>,std::monostate>,
@@ -243,12 +244,7 @@ namespace cppp{
                 try{
                     return invoke_stateless_with_temporary_storage<T>(std::get<0uz>(std::move(strg)),std::move(intermediate));
                 }catch(...){
-                    std::destroy_at(&intermediate);
-                    // GCC erroneously warns about a rethrow statement calling terminate even if the try-block is in fact noexcept
-                    #pragma GCC diagnostic push
-                    #pragma GCC diagnostic ignored "-Wterminate"
-                    throw;
-                    #pragma GCC diagnostic pop
+                    std::terminate();
                 }
             }
         }
