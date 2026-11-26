@@ -8,7 +8,7 @@ namespace cppp{
     class Scanner{
         BinaryFile bf;
         std::array<char8_t,BUF> pbuf;
-        std::size_t bufn = 0uz; // replace both with inplace_vector when it comes out
+        std::size_t bufn = 0uz;
         std::size_t bufp = 0uz;
         void popbuff(){
             if(bufp == bufn){
