@@ -96,6 +96,9 @@ namespace cppp{
                 }
                 return cppp::read<I>(buf.data());
             }
+            void seekrel(std::streamoff n){
+                fs.seekg(n,std::ios_base::cur);
+            }
             void write(std::string_view s){
                 fs.write(s.data(),static_cast<std::streamsize>(s.size()));
             }
