@@ -363,6 +363,10 @@ namespace cppp{
                 return _get<lookup<val>>();
             }
             template<E val>
+            void get() const noexcept requires(std::is_void_v<lookup<val>>){
+                CPPP_ASSERT(_tag == val);
+            }
+            template<E val>
             lookup<val>& get() noexcept{
                 CPPP_ASSERT(_tag == val);
                 return _get<lookup<val>>();
